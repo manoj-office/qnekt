@@ -56,7 +56,7 @@ router.post("/signup", async (req, res) => {
 // 2. sign in
 router.post("/login", async (req, res) => {
   try {
-    const { email, mobNo, role } = req.body;
+    const { email, mobNo } = req.body;
     let user;
     let roleCheck;
     let loginType = "";  // Add this to track login type
@@ -86,7 +86,7 @@ router.post("/login", async (req, res) => {
         let token;
         let refreshToken;
         if (user.role) {
-          if (role == user.role) {
+          if ("admin" == user.role) {
             token = await createAdminToken({
               id: user._id,
               fullName: user.fullName,
