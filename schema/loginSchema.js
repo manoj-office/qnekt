@@ -27,7 +27,9 @@ const userSchema = new mongoose.Schema(
     status: { type: String, default: "Active" },
     role: { type: String },
   },
-  { timestamps: true, versionKey: false, collection: "Users" }
+  { timestamps: true },
+  { versionKey: false },
+  { collection: "Users" }
 );
 
 // 2-Buddies Login Schema :

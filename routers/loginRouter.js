@@ -12,64 +12,51 @@ const { generateUsername } = require("../services/loginFunctions.js");
 
 // 1. Register
 router.post("/signup", async (req, res) => {
-    try {
-        const { fullName, type, email, mobNo, password } = req.body;
+  try {
+    const { fullName, type, email, mobNo, password, role } = req.body;
 
-        // Check if either email or mobile number is provided
-        if (!email || !mobNo) {
-            return res.status(400).json({ message: "Email or mobile number is required" });
-        }
-
-        let existingUser;
-
-        // // Check if email is already registered
-        // if (type === "email") {
-        //     existingUser = await BuddysModel.findOne({
-        //         $and: [{ emailId: email }, { mobNo: "" }],
-        //         // countryCode,
-        //     });
-        //     if (existingUser) return res.status(400).json({ message: "Email is already registered" });
-        // }
-
-        // // Check if mobile number is already registered
-        // if (type === "mobNo") {
-        //     existingUser = await BuddysModel.findOne({
-        //         $and: [{ emailId: "" }, { mobNo: mobNo }],
-        //         // countryCode,
-        //     });
-        //     if (existingUser) return res.status(400).json({ message: "Mobile number is already registered" });
-        // }
-
-        // Generate User Name  :
-        const genUserName = await generateUsername(fullName);
-
-        // Create the buddy user
-        const user = new BuddysModel({
-            fullName: req.body.fullName,
-            emailId: email,
-            mobNo: mobNo,
-            // emailId: type === "email" ? email : "",
-            // mobNo: type === "mobNo" ? mobNo : "",
-            // countryCode: type === "mobNo" ? countryCode : "",
-            // dob: req.body.dob,
-            password: await hashPassword(password),
-            userName: genUserName,
-        });
-        await user.save();
-
-        res.status(200).send({ message: "New user is registered.", result: user });
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).send({ message: "Internal Server Error", error });
+    // Check if either email or mobile number is provided
+    if (!email || !mobNo) {
+      return res.status(400).json({ message: "Email or mobile number is required" });
     }
+
+    let existingUser = await BuddysModel.findOne({
+      $or: [{ emailId: email }, { mobNo: mobNo }],
+    });
+
+    if (existingUser) return res.status(400).json({ message: "Email or mobNo is already registered" });
+
+    // Generate User Name  :
+    const genUserName = await generateUsername(fullName);
+
+    // Create the buddy user
+    const user = new BuddysModel({
+      fullName: req.body.fullName,
+      emailId: email,
+      mobNo: mobNo,
+      // emailId: type === "email" ? email : "",
+      // mobNo: type === "mobNo" ? mobNo : "",
+      // countryCode: type === "mobNo" ? countryCode : "",
+      // dob: req.body.dob,
+      role: role ? role: "", 
+      password: await hashPassword(password),
+      userName: genUserName,
+    });
+    await user.save();
+
+    res.status(200).send({ message: "New user is registered.", result: user });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error", error });
+  }
 });
 
 
 // 2. sign in
 router.post("/login", async (req, res) => {
   try {
-    const { email, mobNo } = req.body;
+    const { email, mobNo, role } = req.body;
     let user;
     let roleCheck;
     let loginType = "";  // Add this to track login type
