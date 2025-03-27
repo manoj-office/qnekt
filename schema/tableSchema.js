@@ -2,19 +2,42 @@
 const mongoose = require("mongoose");
 const validator = require("validator");
 
+// 1. category Schema :
+const categorySchema = new mongoose.Schema(
+    {
+        userId: { type: String, default: "" },
+    	name: { type: String },
+        description: { type: String },	
+        icons: { type: String },
+        instructor_id: { type: String },	
+        price: { type: String },	
+        // category_id: { type: String }, 	
+        // created_at: { type: Date },
+        lastActive: { type: Date },
+
+        status: { type: String, enum: ["Active", "Inactive"], default: "Active" }
+    },
+    { timestamps: true },
+    { versionKey: false },
+    { collection: "Category" }
+);
+
 // 1. courses Schema :
 const coursesSchema = new mongoose.Schema(
     {
-        userId: { type: String, default: "" },
-    	title: { type: String },
+        userId: { type: String, },
+        subjectId:  { type: String },
+    	courseName: { type: String },
         description: { type: String },	
-        instructor_id: { type: String },	
-        price: { type: String },	
-        category_id: { type: String }, 	
+        coursePrice: { type: String },
+        courseTime: { type: String },
+        certificationOfCompletion: { type: Boolean },
+        moreInformation: { type: String },
+        courseType:{type: Boolean}, 	
         created_at: { type: Date },
         lastActive: { type: Date },
 
-        status: { type: String, default: "Active" },
+        status: { type: String, enum: ["Active", "Inactive"], default: "Active" }
     },
     { timestamps: true },
     { versionKey: false },
@@ -73,15 +96,16 @@ const enrollmentSchema = new mongoose.Schema(
     { collection: "Enrollment" }
 );
 
-
+const categoryModel = mongoose.model("Category", categorySchema);
 const coursesModel = mongoose.model("Course", coursesSchema);
 const orderModel = mongoose.model("Order", orderSchema);
 const lessonsModel = mongoose.model("Lesson", lessonSchema);
 const enrollmentModel = mongoose.model("Enrollment", enrollmentSchema);
 
 module.exports = {
-  coursesModel,
-  orderModel,
-  lessonsModel,
-  enrollmentModel
+    categoryModel,
+    coursesModel,
+    orderModel,
+    lessonsModel,
+    enrollmentModel
 };

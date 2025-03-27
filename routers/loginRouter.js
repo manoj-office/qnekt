@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { createAdminToken, createRefreshAdminToken } = require("../auth/auth.js");
+const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenValidation } = require("../auth/auth.js");
 const { hashCompare, hashPassword, createToken, createRefreshToken } = require("../auth/auth.js");
 // const { sendOtpToEmail, sendOtpToMobno, sendOtpToWhatsApp } = require("../config/msg91Config.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
@@ -184,6 +184,199 @@ router.post("/forgotPassword", async (req, res) => {
     res.status(500).send({ message: "Internal Server Error", error });
   }
 });
+
+// 4. courses - CRUD
+router.post("/Category", tokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, searchKeyword, currentPage, pageSize } = req.body;
+    req.body.userId = id;
+    
+    const skip = (currentPage - 1) * pageSize;
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action == "readAll") {
+        // Define search filter
+        const filter = searchKeyword
+          ? { name: { $regex: searchKeyword, $options: "i" } }
+          : {}; // If no keyword, fetch all
+
+        const existingCategory = await categoryModel.find(filter).skip(skip).limit(pageSize);
+        if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
+
+        res.status(200).send({ message: "Category detail.", result: existingCategory });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error", error });
+  }
+});
+
+// 1. courses - CRUD
+router.post("/subject", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, name, description, icons, instructor_id, price, category_id, ID, searchKeyword, currentPage, pageSize } = req.body;
+    req.body.userId = id;
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action == "create") {
+        const existingCategory = await categoryModel.findOne({ name: name });
+        if (existingCategory) return res.status(400).send({ message: "category with this name already exists." });
+
+        const result = new categoryModel({
+          userId: id,
+          name,
+          description,
+          icons,
+          price,
+        });
+
+        await result.save();
+
+        res.status(200).send({ message: "New Category is successfully created." });
+      } else if (action == "read") {
+        if (!ID) return res.status(400).send({ message: "ID is needed." });
+
+        const existingCategory = await categoryModel.findOne({ _id: ID });
+        if (!existingCategory) return res.status(400).send({ message: "category is not found in table." });
+
+        res.status(200).send({ message: "Category detail.", result: existingCategory });
+      } else if (action == "update") {
+        if (!ID) return res.status(400).send({ message: "ID is needed." });
+
+        const existingCategory = await categoryModel.findOne({ _id: ID });
+        if (!existingCategory) return res.status(400).send({ message: "category is not found in table." });
+
+        const query = {};
+
+        if (name) query.name = name;
+        if (description) query.description = description;
+        if (icons) query.icons = icons;
+        if (price) query.price = price;
+
+        
+        const result = await categoryModel.findOneAndUpdate(
+          { _id: ID },
+          query,
+          { new: true }
+        );
+
+        res.status(200).send({ message: "Category detail updated successfully.", result });
+      } else if (action == "delete") {
+        if (!ID) return res.status(400).send({ message: "ID is needed." });
+
+        const existingCategory = await categoryModel.findOne({ _id: ID });
+        if (!existingCategory) return res.status(400).send({ message: "category is not found in table." });
+
+        const result = await categoryModel.findOneAndUpdate(
+          { _id: ID },
+          { status: "Deactive" },
+          { new: true }
+        );
+
+        res.status(200).send({ message: "Category detail deleted successfully.", result });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error", error });
+  }
+});
+
+// 2. Admin dashboard
+
+//CRUD operations in single API
+router.post("/courses", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, subjectId, courseName, description, coursePrice, coursetTime, certificationOfCompletion, moreInformation, courseType, ID } = req.body;
+    req.body.userId = id;
+
+    if (subjectId && !mongoose.Types.ObjectId.isValid(subjectId)) {
+      return res.status(400).send({ message: "Invalid subjectId." });
+    }
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action == "create") {
+        if (!subjectId || !courseName || !description || !coursePrice || !coursetTime || !certificationOfCompletion || !moreInformation || !courseType || !status) {
+          return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const newCourse = new coursesModel({
+          userId: id,
+          subjectId,
+          courseName,
+          description,
+          coursePrice,
+          coursetTime,
+          certificationOfCompletion,
+          moreInformation,
+          courseType
+        });
+
+        await newCourse.save();
+
+        res.status(201).json({ message: "Course Created", result: newCourse });
+      } else if (action === "read") {
+        if (!ID) return res.status(400).json({ error: "Course ID is required" });
+        const readdocument = await coursesModel.findById(ID);
+
+        if (!readdocument) return res.status(400).json({ error: "Course not found" });
+
+        res.status(200).json({ message: "Course Details", result: readdocument });
+      } else if (action === "update") {
+
+        if (!ID) return res.status(400).json({ error: "ID required for update" });
+
+        const updateFields = {};
+        // Number, Name, Description, Icons, Status
+        // subjectId, courseName, description, coursePrice, coursetTime, certificationOfCompletion, moreInformation, courseType, status
+        if (subjectId) updateFields.subjectId = subjectId;
+        if (courseName) updateFields.courseName = courseName;
+        if (description) updateFields.description = description;
+        if (coursePrice) updateFields.coursePrice = coursePrice;
+        if (coursetTime) updateFields.coursetTime = coursetTime;
+        if (certificationOfCompletion) updateFields.certificationOfCompletion = certificationOfCompletion;
+        if (moreInformation) updateFields.moreInformation = moreInformation;
+        if (courseType) updateFields.courseType = courseType;
+
+        const updatedocument = await coursesModel.findOneAndUpdate(
+          { _id: ID },
+          updateFields,
+          { new: true }
+        );
+
+        if (!updatedocument) return res.status(400).json({ error: "Course not found" });
+
+        res.status(200).json({ message: "Course Updated ", result: updatedocument });
+      } else if (action === "delete") {
+        if (!ID) return res.status(400).json({ error: "ID required for deletion" });
+
+        const deletedocument = await coursesModel.findByIdAndUpdate(
+          ID,
+          { status: "Inactive" },
+          { new: "true" }
+        );
+
+        if (!deletedocument) return res.status(404).json({ error: "Course not found" });
+
+        res.status(200).json({ message: "Course status set to be inactive ", deletedcourse: deletedocument });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 
 module.exports = router;
 
