@@ -6,6 +6,7 @@ const { hashCompare, hashPassword, createToken, createRefreshToken } = require("
 // const { sendOtpToEmail, sendOtpToMobno, sendOtpToWhatsApp } = require("../config/msg91Config.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
 const { generateUsername } = require("../services/loginFunctions.js");
+const { categoryModel, coursesModel } = require("../schema/tableSchema.js");
 
 
 
@@ -293,7 +294,7 @@ router.post("/subject", adminTokenValidation, async (req, res) => {
 router.post("/courses", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, subjectId, courseName, description, coursePrice, coursetTime, certificationOfCompletion, moreInformation, courseType, ID } = req.body;
+    const { action, subjectId, courseName, description, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, ID } = req.body;
     req.body.userId = id;
 
     if (subjectId && !mongoose.Types.ObjectId.isValid(subjectId)) {
@@ -306,7 +307,7 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
-        if (!subjectId || !courseName || !description || !coursePrice || !coursetTime || !certificationOfCompletion || !moreInformation || !courseType || !status) {
+        if (!subjectId || !courseName || !description || !coursePrice || !courseTime || !certificationOfCompletion || !moreInformation || !courseType || !status) {
           return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -316,7 +317,7 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
           courseName,
           description,
           coursePrice,
-          coursetTime,
+          courseTime,
           certificationOfCompletion,
           moreInformation,
           courseType
@@ -338,12 +339,12 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
 
         const updateFields = {};
         // Number, Name, Description, Icons, Status
-        // subjectId, courseName, description, coursePrice, coursetTime, certificationOfCompletion, moreInformation, courseType, status
+        // subjectId, courseName, description, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, status
         if (subjectId) updateFields.subjectId = subjectId;
         if (courseName) updateFields.courseName = courseName;
         if (description) updateFields.description = description;
         if (coursePrice) updateFields.coursePrice = coursePrice;
-        if (coursetTime) updateFields.coursetTime = coursetTime;
+        if (courseTime) updateFields.courseTime = courseTime;
         if (certificationOfCompletion) updateFields.certificationOfCompletion = certificationOfCompletion;
         if (moreInformation) updateFields.moreInformation = moreInformation;
         if (courseType) updateFields.courseType = courseType;
