@@ -6,7 +6,7 @@ const { hashCompare, hashPassword, createToken, createRefreshToken } = require("
 // const { sendOtpToEmail, sendOtpToMobno, sendOtpToWhatsApp } = require("../config/msg91Config.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
 const { generateUsername } = require("../services/loginFunctions.js");
-const { categoryModel, coursesModel } = require("../schema/tableSchema.js");
+const { categoryModel, coursesModel, studentModel } = require("../schema/tableSchema.js");
 
 
 const fs = require('fs');
@@ -238,12 +238,17 @@ router.post("/Category", tokenValidation, async (req, res) => {
   }
 });
 
+//subject 
 // 1. courses - CRUD
 router.post("/subject", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, name, description, icons, instructor_id, price, category_id, ID, searchKeyword, currentPage, pageSize } = req.body;
     req.body.userId = id;
+
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
@@ -311,7 +316,7 @@ router.post("/subject", adminTokenValidation, async (req, res) => {
   }
 });
 
-// 2. Admin dashboard
+// courses
 
 //CRUD operations in single API
 router.post("/courses", adminTokenValidation, async (req, res) => {
@@ -401,6 +406,30 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
   }
 });
 
+
+// give subjectId and get course List
+router.post("/coursesList", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID } = req.body; // Extract action and status
+    req.body.userId = id;
+
+    if (!ID) return res.status(400).json({ message: "Missing required fields" });
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action == "readAll") {
+        const result = await coursesModel.find({ subjectid: ID });
+
+        res.status(200).json({ message: "Data received", result });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// user Management
 //StudentList CRUD operations 
 router.post("/users", adminTokenValidation, upload.single("image"), async (req, res) => {
   try {
@@ -408,6 +437,10 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
     const { action, ID, name, email, Id } = req.body;
     req.body.userId = id;
     const image = req.files;
+
+    if (Id && !mongoose.Types.ObjectId.isValid(Id)) {
+      return res.status(400).send({ message: "Invalid Id." });
+    }
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
@@ -473,6 +506,8 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
   }
 });
 
+// user Management
+// user List
 // Get users list by status
 router.post("/userslist", adminTokenValidation, async (req, res) => {
   try {
@@ -509,18 +544,25 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
 
 
 
-router.post("/coursesList", adminTokenValidation, async (req, res) => {
+// Admin Dashboard
+router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, ID } = req.body; // Extract action and status
+    const { action } = req.body;
     req.body.userId = id;
 
-    if (!ID) return res.status(400).json({ message: "Missing required fields" });
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
-        const result = await Course.find({ subjectid: ID });
+        const Count = {
+          totalUsers: await BuddysModel.countDocuments({}),
+          totalSubscribers: await orderModel.countDocuments({}),
+          totalVideos: await orderModel.countDocuments({}),
+          totalPhotos: await orderModel.countDocuments({}),
+          totalDocuments: await orderModel.countDocuments({}),
+          totalRevenue: await orderModel.countDocuments({}),
+        };
 
         res.status(200).json({ message: "Data received", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
