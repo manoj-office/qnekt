@@ -37,11 +37,25 @@ const coursesSchema = new mongoose.Schema(
         created_at: { type: Date },
         lastActive: { type: Date },
 
-        status: { type: String, enum: ["Active", "Inactive"], default: "Active" }
+        status: { type: String, default: "Active" }
     },
     { timestamps: true },
     { versionKey: false },
     { collection: "Course" }
+);
+
+// studentSchema
+const studentSchema = new mongoose.Schema(
+    {
+        ID: { type: Number, },
+        name: { type: String, },
+        email: { type: String },
+        image: { type: String },
+        status: { type: String, default: "Active" }
+    },
+    { timestamps: true },
+    { versionKey: false },
+    { collection: "Student" }
 );
 
 // 2. order Schema :
@@ -98,6 +112,9 @@ const enrollmentSchema = new mongoose.Schema(
 
 const categoryModel = mongoose.model("Category", categorySchema);
 const coursesModel = mongoose.model("Course", coursesSchema);
+const studentModel = mongoose.model("Student", studentSchema);
+
+
 const orderModel = mongoose.model("Order", orderSchema);
 const lessonsModel = mongoose.model("Lesson", lessonSchema);
 const enrollmentModel = mongoose.model("Enrollment", enrollmentSchema);
@@ -107,5 +124,6 @@ module.exports = {
     coursesModel,
     orderModel,
     lessonsModel,
-    enrollmentModel
+    enrollmentModel,
+    studentModel,
 };

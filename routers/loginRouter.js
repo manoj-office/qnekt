@@ -9,6 +9,29 @@ const { generateUsername } = require("../services/loginFunctions.js");
 const { categoryModel, coursesModel } = require("../schema/tableSchema.js");
 
 
+const fs = require('fs');
+const multer = require("multer");
+
+//multiple files uploaded using multer
+
+
+if (!fs.existsSync("uploads")) {
+  fs.mkdirSync("uploads");
+}
+
+const storage = multer.diskStorage({
+destination: function (req, file, cb){
+        cb(null, "./uploads/");
+    },
+  filename: (req, file, cb) => {
+    // cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
+    cb(null, Date.now() + '-' + file.originalname);
+
+  }
+});
+const upload = multer({
+    storage: storage,
+  });
 
 
 // 1. Register
@@ -375,6 +398,135 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+//StudentList CRUD operations 
+router.post("/users", adminTokenValidation, upload.single("image"), async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID, name, email, Id } = req.body;
+    req.body.userId = id;
+    const image = req.files;
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action === "create") {
+        if (!ID || !name || !email || !image || !status) {
+          return res.status(400).json({ message: "All fields are required" });
+        }
+
+        const newStudentList = new studentModel({
+          ID,
+          name,
+          email,
+          image,
+        });
+
+        await newStudentList.save();
+
+        return res.status(201).json({ message: "new student Created", result: newStudentList });
+      } else if (action === "read") {
+        if (!Id) return res.status(400).json({ message: "ID is required" });
+
+        const readdocument = await studentModel.findById(Id);
+        if (!readdocument) return res.status(400).json({ error: "Student not found in table." });
+
+        res.status(200).json({ message: "Students Details", result: readdocument });
+      } else if (action === "update") {
+        if (!Id) return res.status(400).json({ message: "ID required for update" });
+
+        const updateFields = {};
+
+        if (ID) updateFields.ID = ID;
+        if (name) updateFields.name = name;
+        if (email) updateFields.email = email;
+        if (req.file) updateFields.image = image; // Update only if new file is uploaded
+
+
+        const updatedocument = await studentModel.findOneAndUpdate(
+          { _id: Id },
+          updateFields,
+          { new: true }
+        );
+
+        if (!updatedocument) return res.status(400).json({ error: "Student not found in the table." });
+
+        res.status(200).json({ message: "Student Details Updated ", result: updatedocument });
+      } else if (action === "delete") {
+        if (!Id) return res.status(400).json({ message: "ID required for deletion" });
+
+        const deletedocument = await studentModel.findOneAndUpdate(
+          { _id: Id },
+          { status: "Inactive" },
+          { new: "true" }
+        );
+
+        if (!deletedocument) return res.status(404).json({ error: "Student not found in table." });
+
+        res.status(200).json({ message: "Student status set to be inactive ", result: deletedocument });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// Get users list by status
+router.post("/userslist", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action } = req.body;
+    req.body.userId = id;
+
+    const totalCount = {
+      studentList: await studentModel.countDocuments({ status: "Active" }),
+      deletedList: await studentModel.countDocuments({ status: "Inctive" }),
+      pendingList: await studentModel.countDocuments({ status: "Pending" }),
+    };
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action == "studentList") {
+        const result = await studentModel.find({ status: "Active" });
+
+        res.status(200).json({ message: "student List", totalCount, result: result });
+      } else if (action == "deletedList") {
+        const result = await studentModel.find({ status: "Inactive" });
+
+        res.status(200).json({ message: "deleted List", totalCount, result: result });
+      } else if (action == "pendingList") {
+        const result = await studentModel.find({ status: "Pending" });
+
+        res.status(200).json({ message: "pending List", totalCount, result: result });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+router.post("/coursesList", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID } = req.body; // Extract action and status
+    req.body.userId = id;
+
+    if (!ID) return res.status(400).json({ message: "Missing required fields" });
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action == "readAll") {
+        const result = await Course.find({ subjectid: ID });
+
+        res.status(200).json({ message: "Data received", result });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -1897,3 +2049,4 @@ module.exports = router;
 // });
 
 // module.exports = router;
+
