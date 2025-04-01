@@ -361,9 +361,6 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
-        // if (!subjectId || !courseName || !description || !coursePrice || !courseTime || !certificationOfCompletion || !moreInformation || !courseType) {
-        //   return res.status(400).json({ message: "All fields are required" });
-        // }
 
         const newCourse = new coursesModel({
           userId: id,
@@ -388,7 +385,6 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
 
         res.status(200).json({ message: "Course Details", result: readdocument });
       } else if (action === "update") {
-
         if (!ID) return res.status(400).json({ error: "ID required for update" });
 
         const updateFields = {};
@@ -442,6 +438,10 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
 
     if (!ID) return res.status(400).json({ message: "Missing required fields" });
 
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
+
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
@@ -451,8 +451,8 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
 });
 
 //---------------------------------------------------------------------------------------------------
@@ -565,8 +565,8 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
 });
 
 
@@ -596,8 +596,8 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
 });
 
 
@@ -676,8 +676,8 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
 });
 
 //video management
@@ -720,8 +720,8 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ error: error.message });
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -800,8 +800,8 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
 });
 
 //gallery management
@@ -844,8 +844,8 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ error: error.message });
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -859,6 +859,9 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
     
     const library = req.files;
 
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
     
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
@@ -920,8 +923,8 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
-    console.log(error)
-    res.status(500).json({ error: error.message });
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
@@ -972,10 +975,144 @@ router.post("/coursesList", async (req, res) => {
       res.status(200).json({ message: "Course Details List.", result });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
 });
 
+// //course - R
+// router.post("/courseRead", async (req, res) => {
+//   try {
+//     const id = req.userId;
+//     const { action, ID } = req.body; // Extract action and status
+//     req.body.userId = id;
+
+//     if(action == "read") {
+//       const result = await coursesModel.find({ _id: ID });
+
+//       if(!result) return  res.status(400).send({ message: "no course found for the subject." });
+
+//       res.status(200).json({ message: "Course Details.", result });
+//     } else res.status(400).send({ message: "Action Does Not Exist." });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// })
+
+//course - R
+router.post("/courseRead", userValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID } = req.body; // Extract action and status
+    req.body.userId = id;
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+
+      if (action == "read") {
+        const result = await coursesModel.find({ _id: ID });
+        
+        const checkCourse = await enrollmentModel.findOne({ course_id: result._id });
+        if(checkCourse) {
+          const video = await videoModel.find({ courseId: result._id });
+          const image = await imageModel.find({ courseId: result._id });
+
+          return res.status(200).json({ message: "Course Details.", result, video, image });
+        }
+
+        if (!result) return res.status(400).send({ message: "no course found for the subject." });
+
+        res.status(200).json({ message: "Course Details.", result });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
+});
+
+//-----------------------------------------------------------------------------------------------
+
+//profile
+router.post("/profile", tokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID, type, firstName, lastName, emailId, mobNo, city, country } = req.body; // Extract action and status
+    req.body.userId = id;
+
+    // if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+    //   return res.status(400).send({ message: "Invalid ID." });
+    // }
+
+    const existingUser = await BuddysModel.findOne({ _id: id });
+    if (existingUser) {
+      if (action == "myprofile") {
+        if(existingUser) return  res.status(200).send({ message: "profile Details,", result: existingUser });
+
+        const result = await BuddysModel.findOneAndUpdate(
+          { _id: existingUser._id },
+          {
+            firstName,
+            lastName,
+            emailId,
+            mobNo,
+            city,
+            country
+          },
+          { new: true }
+        );
+
+        if(!result) return  res.status(400).send({ message: "no profile found in the table." });
+
+        res.status(200).send({ message: "profile Details Updated.", result });
+      } else if (action == "myCourse") {
+
+        const result = {
+          enrolledCourse: await lessonsModel.countDocuments({ status: "Active" }),
+          inProgressCourse: await lessonsModel.countDocuments({ status: "InProgress" }),
+          completedCourse: await lessonsModel.countDocuments({ status: "Completed" }),
+          failedCourse: await lessonsModel.countDocuments({ status: "deleted" }),
+        };
+
+        res.status(200).send({ message: "myCourse Details.", result });
+      } else if (action == "library") {
+        if (type == "library") {
+          const result = await libraryModel.find({ userId: existingUser._id });
+
+          res.status(200).send({ message: "My library Details.", result });
+        } else if (type == "video") {
+          const result = await videoModel.find({ userId: existingUser._id });
+
+          if(!result) return  res.status(400).send({ message: "no video found in the table." });
+
+          res.status(200).send({ message: "My video Details.", result });
+        } else if (type == "image") {
+          const result = await imageModel.find({ userId: existingUser._id });
+
+          if(!result) return  res.status(400).send({ message: "no image found in the table." });
+
+          res.status(200).send({ message: "My image Details.", result });
+        } else res.status(400).send({ message: "Type Does Not Exist." });
+      } else if (action == "mySubscription") {
+        if(type == "allCourses") {
+          const result = await coursesModel.find({ });
+
+          if(!result) return  res.status(400).send({ message: "no course found in the table." });
+
+          res.status(200).send({ message: "Courses Details.", result });
+        } else if (type == "myList") {
+          const result = await coursesModel.find({ userId: existingUser._id });
+
+          if(!result) return  res.status(400).send({ message: "no course found in the table." });
+
+          res.status(200).send({ message: "My Courses Details.", result });
+        } else res.status(400).send({ message: "Type Does Not Exist." });
+      } else if (action == "notification") {
+
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });  }
+});
 
 
 
