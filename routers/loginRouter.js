@@ -237,7 +237,7 @@ router.post("/forgotPassword", async (req, res) => {
 //-------------------------------------------------------------------------------------------------
 // subject
 // 4. courses - List
-router.post("/Category", tokenValidation, async (req, res) => {
+router.post("/Category", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, searchKeyword, currentPage, pageSize } = req.body;
@@ -543,23 +543,23 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
     req.body.userId = id;
 
     const totalCount = {
-      studentList: await studentModel.countDocuments({ status: "Active" }),
-      deletedList: await studentModel.countDocuments({ status: "Inctive" }),
-      pendingList: await studentModel.countDocuments({ status: "Pending" }),
+      studentList: await BuddysModel.countDocuments({ status: "Active" }),
+      deletedList: await BuddysModel.countDocuments({ status: "Inctive" }),
+      pendingList: await BuddysModel.countDocuments({ status: "Pending" }),
     };
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "studentList") {
-        const result = await studentModel.find({ status: "Active" });
+        const result = await BuddysModel.find({ status: "Active" });
 
         res.status(200).json({ message: "student List", totalCount, result: result });
       } else if (action == "deletedList") {
-        const result = await studentModel.find({ status: "Inactive" });
+        const result = await BuddysModel.find({ status: "Inactive" });
 
         res.status(200).json({ message: "deleted List", totalCount, result: result });
       } else if (action == "pendingList") {
-        const result = await studentModel.find({ status: "Pending" });
+        const result = await BuddysModel.find({ status: "Pending" });
 
         res.status(200).json({ message: "pending List", totalCount, result: result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
@@ -854,7 +854,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 router.post("/library", upload.array("library", 5), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, subjectId, courseId } = req.body;
+    const { action, subjectId, courseId, ID } = req.body;
     req.body.userId = id;
     
     const library = req.files;
@@ -967,7 +967,9 @@ router.post("/coursesList", async (req, res) => {
     if (action == "readAll") {
       const result = await coursesModel.find({ subjectid: ID });
 
-      res.status(200).json({ message: "Data received", result });
+      if(!result) return  res.status(400).send({ message: "no course found for the subject." });
+
+      res.status(200).json({ message: "Course Details List.", result });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     res.status(500).json({ error: error.message });
