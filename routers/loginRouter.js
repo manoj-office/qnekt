@@ -1,43 +1,57 @@
 const express = require("express");
 const router = express.Router();
+const mongoose = require("mongoose");
 
 const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenValidation } = require("../auth/auth.js");
 const { hashCompare, hashPassword, createToken, createRefreshToken } = require("../auth/auth.js");
 // const { sendOtpToEmail, sendOtpToMobno, sendOtpToWhatsApp } = require("../config/msg91Config.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
 const { generateUsername } = require("../services/loginFunctions.js");
-const { categoryModel, coursesModel, studentModel } = require("../schema/tableSchema.js");
+const { categoryModel, coursesModel, studentModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel } = require("../schema/tableSchema.js");
 
 
 const fs = require('fs');
 const multer = require("multer");
-
-//multiple files uploaded using multer
-
+const path = require("path");
 
 if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
 }
 
-const storage = multer.diskStorage({
-destination: function (req, file, cb){
-        cb(null, "./uploads/");
-    },
-  filename: (req, file, cb) => {
-    // cb(null, file.fieldname + '-' + Date.now() + path.extname(file.originalname));
-    cb(null, Date.now() + '-' + file.originalname);
+// Define allowed file types
+const allowedFileTypes = /mp3|pdf|doc|docx|mp4|jpeg|jpg|png|webp|svg/;
 
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "./uploads/");
+  },
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + '-' + file.originalname);
   }
 });
+
+// File filter function
+const fileFilter = (req, file, cb) => {
+  const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedFileTypes.test(file.mimetype);
+
+  if (extname && mimetype) {
+    return cb(null, true);
+  } else {
+    return cb(new Error("Only MP3, PDF, DOC, DOCX, MP4, JPEG, PNG, WebP, and SVG files are allowed!"), false);
+  }
+};
+
 const upload = multer({
-    storage: storage,
-  });
+  storage: storage,
+  fileFilter: fileFilter
+});
 
 
 // 1. Register
 router.post("/signup", async (req, res) => {
   try {
-    const { fullName, type, email, mobNo, password, role } = req.body;
+    const { firstName, lastName, type, email, mobNo, password, role } = req.body;
 
     // Check if either email or mobile number is provided
     if (!email || !mobNo) {
@@ -51,11 +65,13 @@ router.post("/signup", async (req, res) => {
     if (existingUser) return res.status(400).json({ message: "Email or mobNo is already registered" });
 
     // Generate User Name  :
-    const genUserName = await generateUsername(fullName);
+    const genUserName = await generateUsername(firstName);
 
     // Create the buddy user
     const user = new BuddysModel({
-      fullName: req.body.fullName,
+      // fullName: req.body.fullName,
+      firstName: req.body.firstName,
+      lastName: req.body.lastName,
       emailId: email,
       mobNo: mobNo,
       // emailId: type === "email" ? email : "",
@@ -113,7 +129,9 @@ router.post("/login", async (req, res) => {
           if ("admin" == user.role) {
             token = await createAdminToken({
               id: user._id,
-              fullName: user.fullName,
+              // fullName: user.fullName,
+              firstName: user.firstName,
+              lastName: user.lastName,
               email: user.emailId,
               mobNo: user.mobNo,
               // dob: user.dob,
@@ -121,7 +139,9 @@ router.post("/login", async (req, res) => {
             });
             refreshToken = await createRefreshAdminToken({
               id: user._id,
-              fullName: user.fullName,
+              // fullName: user.fullName,
+              firstName: user.firstName,
+              lastName: user.lastName,
               email: user.emailId,
               mobNo: user.mobNo,
               // dob: user.dob,
@@ -135,14 +155,18 @@ router.post("/login", async (req, res) => {
         } else {
           token = await createToken({
             id: user._id,
-            fullName: user.fullName,
+            // fullName: user.fullName,
+            firstName: user.firstName,
+            lastName: user.lastName,
             email: user.emailId,
             mobNo: user.mobNo,
             // dob: user.dob,
           });
           refreshToken = await createRefreshToken({
             id: user._id,
-            fullName: user.fullName,
+            // fullName: user.fullName,
+            firstName: user.firstName,
+            lastName: user.lastName,
             email: user.emailId,
             mobNo: user.mobNo,
             // dob: user.dob,
@@ -209,7 +233,10 @@ router.post("/forgotPassword", async (req, res) => {
   }
 });
 
-// 4. courses - CRUD
+
+//-------------------------------------------------------------------------------------------------
+// subject
+// 4. courses - List
 router.post("/Category", tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
@@ -315,9 +342,8 @@ router.post("/subject", adminTokenValidation, async (req, res) => {
     res.status(500).send({ message: "Internal Server Error", error });
   }
 });
-
+//-------------------------------------------------------------------------------------------------
 // courses
-
 //CRUD operations in single API
 router.post("/courses", adminTokenValidation, async (req, res) => {
   try {
@@ -335,9 +361,9 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
-        if (!subjectId || !courseName || !description || !coursePrice || !courseTime || !certificationOfCompletion || !moreInformation || !courseType || !status) {
-          return res.status(400).json({ message: "All fields are required" });
-        }
+        // if (!subjectId || !courseName || !description || !coursePrice || !courseTime || !certificationOfCompletion || !moreInformation || !courseType) {
+        //   return res.status(400).json({ message: "All fields are required" });
+        // }
 
         const newCourse = new coursesModel({
           userId: id,
@@ -429,6 +455,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
   }
 });
 
+//---------------------------------------------------------------------------------------------------
 // user Management
 //StudentList CRUD operations 
 router.post("/users", adminTokenValidation, upload.single("image"), async (req, res) => {
@@ -543,6 +570,7 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
 });
 
 
+//--------------------------------------------------------------------------------------------------
 
 // Admin Dashboard
 router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
@@ -558,9 +586,9 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
         const Count = {
           totalUsers: await BuddysModel.countDocuments({}),
           totalSubscribers: await orderModel.countDocuments({}),
-          totalVideos: await orderModel.countDocuments({}),
-          totalPhotos: await orderModel.countDocuments({}),
-          totalDocuments: await orderModel.countDocuments({}),
+          totalVideos: await videoModel.countDocuments({}),
+          totalPhotos: await imageModel.countDocuments({}),
+          totalDocuments: await libraryModel.countDocuments({}),
           totalRevenue: await orderModel.countDocuments({}),
         };
 
@@ -572,13 +600,16 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
   }
 });
 
+
+//-------------------------------------------------------------------------------------------------
+//video management
 //video CRUD
 router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons,  ID } = req.body;
     req.body.userId = id;
-    const video = req.files.map(file => filename);
+    const video = req.files;
 
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -649,7 +680,8 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
   }
 });
 
-//video list 
+//video management
+//video list  ----change
 router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
@@ -693,13 +725,15 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
   }
 });
 
+
+//gallery management
 //image CRUD
 router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons,  ID } = req.body;
     req.body.userId = id;
-    const video = req.files.map(file => filename);
+    const image = req.files;
 
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -713,7 +747,7 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
           userId: id,
           categoryId,
           courseId,
-          video,
+          image,
           name,
           description,
           icons,
@@ -721,14 +755,14 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
 
         await result.save();
 
-        res.status(200).send({ message: "video succefully uploaded.", result });
+        res.status(200).send({ message: "image succefully uploaded.", result });
       } else if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
         const result = await imageModel.findById(ID);
-        if (!result) return res.status(400).json({ error: "Video not found in table." });
+        if (!result) return res.status(400).json({ error: "image not found in table." });
 
-        res.status(200).json({ message: "Video Details", result });
+        res.status(200).json({ message: "image Details", result });
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -736,7 +770,7 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (video) updateFields.video = video; // Update only if new file is uploaded
+        if (image) updateFields.image = image; // Update only if new file is uploaded
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
         if (icons) updateFields.icons = icons;
@@ -747,9 +781,9 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
           { new: true }
         );
         
-        if (!result) return res.status(400).json({ error: "Video not found in table." });
+        if (!result) return res.status(400).json({ error: "image not found in table." });
 
-        res.status(200).json({ message: "Video Details", result });
+        res.status(200).json({ message: "image Details", result });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -760,9 +794,9 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
           { new: true }
         );
         
-        if (!result) return res.status(400).json({ error: "Video not found in table." });
+        if (!result) return res.status(400).json({ error: "image not found in table." });
 
-        res.status(200).json({ message: "Video Details", result });
+        res.status(200).json({ message: "image Details", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -770,7 +804,8 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
   }
 });
 
-//Image list 
+//gallery management
+//Image list  ----change
 router.post("/adminImageList", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
@@ -815,20 +850,73 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 });
 
 //libaray management
-router.post("/library", upload.array("image", 5), adminTokenValidation, async (req, res) => {
+//library 
+router.post("/library", upload.array("library", 5), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, subjectId, courseId } = req.body;
     req.body.userId = id;
     
-    const images = req.files;
+    const library = req.files;
 
     
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
-        // const result = new 
+        const result = new libraryModel({
+          userId: id,
+          categoryId: subjectId,
+          courseId,
+          library,
+          name,
+          description,
+          icons,
+        });
 
+        await result.save();
+
+        res.status(200).send({ message: "library succefully uploaded.", result });
+      } else if (action == "read") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
+        const result = await libraryModel.findById(ID);
+        if (!result) return res.status(400).json({ error: "library not found in table." });
+
+        res.status(200).json({ message: "library Details", result });
+      } else if (action == "update") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
+        const updateFields = {};
+
+        if (categoryId) updateFields.categoryId = categoryId;
+        if (courseId) updateFields.courseId = courseId;
+        if (library) updateFields.library = library; // Update only if new file is uploaded
+        if (name) updateFields.name = name;
+        if (description) updateFields.description = description;
+        if (icons) updateFields.icons = icons;
+
+        const result = await libraryModel.findOneAndUpdate(
+          { _id: ID },
+          updateFields,
+          { new: true }
+        );
+        
+        if (!result) return res.status(400).json({ error: "library not found in table." });
+
+        res.status(200).json({ message: "library Details", result });
+      } else if (action == "delete") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
+      
+        const result = await libraryModel.findOneAndUpdate(
+          { _id: ID },
+          { status: "Inactive" },
+          { new: true }
+        );
+        
+        if (!result) return res.status(400).json({ error: "library not found in table." });
+
+        res.status(200).json({ message: "library Details", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {

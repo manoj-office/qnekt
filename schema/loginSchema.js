@@ -6,6 +6,8 @@ const validator = require("validator");
 const userSchema = new mongoose.Schema(
   {
     fullName: { type: String },
+    firstName: { type: String },
+    lastName: { type: String },
     emailId: { type: String },
     countryCode: { type: String },
     mobNo: { type: String },

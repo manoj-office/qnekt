@@ -118,7 +118,7 @@ const videoSchema = new mongoose.Schema(
         name: { type: String },
         description: { type: String },
         icons: { type: String },
-        video: { type: String },
+        video: { type: Array },
         created_at: { type: Date },
 
         status: { type: String, default: "Active" }, //completed
@@ -138,7 +138,7 @@ const imageSchema = new mongoose.Schema(
         name: { type: String },
         description: { type: String },
         icons: { type: String },
-        image: { type: String },
+        image: { type: Array },
         created_at: { type: Date },
 
         status: { type: String, default: "Active" }, //completed
@@ -148,11 +148,30 @@ const imageSchema = new mongoose.Schema(
     { collection: "Images" }
 );
 
+const librarySchema = new mongoose.Schema(
+    {
+        userId: { type: String },
+        categoryId: { type: String },
+        courseId: { type: String },
+        name: { type: String },
+        description: { type: String },
+        icons: { type: String },
+        library: { type: Array },
+        created_at: { type: Date },
+
+        status: { type: String, default: "Active" }, //completed
+    },
+    { timestamps: true },
+    { versionKey: false },
+    { collection: "Library" }
+);
+
 const categoryModel = mongoose.model("Category", categorySchema);
 const coursesModel = mongoose.model("Course", coursesSchema);
 const studentModel = mongoose.model("Student", studentSchema);
 const videoModel = mongoose.model("Videos", videoSchema);
 const imageModel = mongoose.model("Images", imageSchema);
+const libraryModel = mongoose.model("Library", librarySchema);
 
 
 const orderModel = mongoose.model("Order", orderSchema);
@@ -168,4 +187,5 @@ module.exports = {
     studentModel,
     videoModel,
     imageModel,
+    libraryModel,
 };

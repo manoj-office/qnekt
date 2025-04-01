@@ -28,15 +28,15 @@ const createAdminToken = async ({ id, fullName, email, mobNo, dob, role }) => {
   return token;
 };
 
-const createRefreshToken = async ({ id, fullName, email, mobNo, dob }) => {
-  let token = jwt.sign({ id, fullName, email, mobNo, dob }, accessSecretKey, {
+const createRefreshToken = async ({ id, firstName, lastName, email, mobNo, dob }) => {
+  let token = jwt.sign({ id, firstName, lastName, email, mobNo, dob }, accessSecretKey, {
     expiresIn: "30d",
   });
   return token;
 };
 
-const createRefreshAdminToken = async ({ id, fullName, email, mobNo, dob, role }) => {
-  let token = jwt.sign({ id, fullName, email, mobNo, dob, role }, accessSecretKey, {
+const createRefreshAdminToken = async ({ id, firstName, lastName, email, mobNo, dob, role }) => {
+  let token = jwt.sign({ id, firstName, lastName, email, mobNo, dob, role }, accessSecretKey, {
     expiresIn: "30d",
   });
   return token;
