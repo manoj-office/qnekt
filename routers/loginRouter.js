@@ -461,25 +461,24 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
 router.post("/users", adminTokenValidation, upload.single("image"), async (req, res) => {
   try {
     const id = req.userId;
-    const { action, ID, name, email, Id } = req.body;
+    const { action, firstName, lastName, email, mobNo, ID } = req.body;
     req.body.userId = id;
+
     const image = req.files;
 
-    if (Id && !mongoose.Types.ObjectId.isValid(Id)) {
-      return res.status(400).send({ message: "Invalid Id." });
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
     }
 
-    const user = await BuddysModel.findOne({ _id: id });
+    const user = await BuddysModel.findOne({ _id: ID });
     if (user) {
       if (action === "create") {
-        if (!ID || !name || !email || !image || !status) {
-          return res.status(400).json({ message: "All fields are required" });
-        }
 
-        const newStudentList = new studentModel({
-          ID,
-          name,
-          email,
+        const newStudentList = new BuddysModel({
+          firstName, 
+          lastName, 
+          emailId: email, 
+          mobNo,
           image,
         });
 
@@ -487,25 +486,26 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
 
         return res.status(201).json({ message: "new student Created", result: newStudentList });
       } else if (action === "read") {
-        if (!Id) return res.status(400).json({ message: "ID is required" });
+        if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const readdocument = await studentModel.findById(Id);
+        const readdocument = await BuddysModel.findById(ID);
         if (!readdocument) return res.status(400).json({ error: "Student not found in table." });
 
         res.status(200).json({ message: "Students Details", result: readdocument });
       } else if (action === "update") {
-        if (!Id) return res.status(400).json({ message: "ID required for update" });
+        if (!ID) return res.status(400).json({ message: "ID required for update" });
 
         const updateFields = {};
 
-        if (ID) updateFields.ID = ID;
-        if (name) updateFields.name = name;
-        if (email) updateFields.email = email;
+        if (firstName) updateFields.firstName = ID;
+        if (lastName) updateFields.lastName = lastName;
+        if (email) updateFields.emailId = email;
+        if (mobNo) updateFields.mobNo = mobNo;
         if (image) updateFields.image = image; // Update only if new file is uploaded
 
 
-        const updatedocument = await studentModel.findOneAndUpdate(
-          { _id: Id },
+        const updatedocument = await BuddysModel.findOneAndUpdate(
+          { _id: ID },
           updateFields,
           { new: true }
         );
@@ -514,10 +514,10 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
 
         res.status(200).json({ message: "Student Details Updated ", result: updatedocument });
       } else if (action === "delete") {
-        if (!Id) return res.status(400).json({ message: "ID required for deletion" });
+        if (!ID) return res.status(400).json({ message: "ID required for deletion" });
 
-        const deletedocument = await studentModel.findOneAndUpdate(
-          { _id: Id },
+        const deletedocument = await BuddysModel.findOneAndUpdate(
+          { _id: ID },
           { status: "Inactive" },
           { new: "true" }
         );
