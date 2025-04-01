@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 
-const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenValidation } = require("../auth/auth.js");
+const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenValidation, userValidation } = require("../auth/auth.js");
 const { hashCompare, hashPassword, createToken, createRefreshToken } = require("../auth/auth.js");
 // const { sendOtpToEmail, sendOtpToMobno, sendOtpToWhatsApp } = require("../config/msg91Config.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
