@@ -4,10 +4,9 @@ const mongoose = require("mongoose");
 
 const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenValidation, userValidation } = require("../auth/auth.js");
 const { hashCompare, hashPassword, createToken, createRefreshToken } = require("../auth/auth.js");
-// const { sendOtpToEmail, sendOtpToMobno, sendOtpToWhatsApp } = require("../config/msg91Config.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
 const { generateUsername } = require("../services/loginFunctions.js");
-const { categoryModel, coursesModel, studentModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel } = require("../schema/tableSchema.js");
+const { categoryModel, coursesModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel } = require("../schema/tableSchema.js");
 
 
 const fs = require('fs');
@@ -51,7 +50,7 @@ const upload = multer({
 // 1. Register
 router.post("/signup", async (req, res) => {
   try {
-    const { firstName, lastName, type, email, mobNo, password, role } = req.body;
+    const { firstName, email, mobNo, password, role } = req.body;
 
     // Check if either email or mobile number is provided
     if (!email || !mobNo) {
@@ -78,7 +77,7 @@ router.post("/signup", async (req, res) => {
       // mobNo: type === "mobNo" ? mobNo : "",
       // countryCode: type === "mobNo" ? countryCode : "",
       // dob: req.body.dob,
-      role: role ? role: "", 
+      role: role ? role : "",
       password: await hashPassword(password),
       userName: genUserName,
     });
@@ -98,7 +97,6 @@ router.post("/login", async (req, res) => {
   try {
     const { email, mobNo } = req.body;
     let user;
-    let roleCheck;
     let loginType = "";  // Add this to track login type
 
     if (email !== "") {
@@ -242,7 +240,7 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
     const id = req.userId;
     const { action, searchKeyword, currentPage, pageSize } = req.body;
     req.body.userId = id;
-    
+
     const skip = (currentPage - 1) * pageSize;
 
     const user = await BuddysModel.findOne({ _id: id });
@@ -270,7 +268,7 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
 router.post("/subject", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, name, description, icons, instructor_id, price, category_id, ID, searchKeyword, currentPage, pageSize } = req.body;
+    const { action, name, description, icons, price, ID } = req.body;
     req.body.userId = id;
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -314,7 +312,7 @@ router.post("/subject", adminTokenValidation, async (req, res) => {
         if (icons) query.icons = icons;
         if (price) query.price = price;
 
-        
+
         const result = await categoryModel.findOneAndUpdate(
           { _id: ID },
           query,
@@ -452,7 +450,8 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 //---------------------------------------------------------------------------------------------------
@@ -475,9 +474,9 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
       if (action === "create") {
 
         const newStudentList = new BuddysModel({
-          firstName, 
-          lastName, 
-          emailId: email, 
+          firstName,
+          lastName,
+          emailId: email,
           mobNo,
           image,
         });
@@ -566,7 +565,8 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 
@@ -597,7 +597,8 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 
@@ -607,7 +608,7 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
 router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, categoryId, courseId, name, description, icons,  ID } = req.body;
+    const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
     const video = req.files;
 
@@ -656,20 +657,20 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
           updateFields,
           { new: true }
         );
-        
+
         if (!result) return res.status(400).json({ error: "Video not found in table." });
 
         res.status(200).json({ message: "Video Details", result });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-      
+
         const result = await videoModel.findOneAndUpdate(
           { _id: ID },
           { status: "Inactive" },
           { new: true }
         );
-        
+
         if (!result) return res.status(400).json({ error: "Video not found in table." });
 
         res.status(200).json({ message: "Video Details", result });
@@ -677,7 +678,8 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 //video management
@@ -687,7 +689,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
     const id = req.userId;
     const { action } = req.body;
     req.body.userId = id;
-    
+
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
@@ -714,8 +716,8 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
             }
           }
         ]);
-  
-        
+
+
         res.status(200).send({ message: "category Name.", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
@@ -731,7 +733,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
 router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, categoryId, courseId, name, description, icons,  ID } = req.body;
+    const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
     const image = req.files;
 
@@ -780,20 +782,20 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
           updateFields,
           { new: true }
         );
-        
+
         if (!result) return res.status(400).json({ error: "image not found in table." });
 
         res.status(200).json({ message: "image Details", result });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-      
+
         const result = await imageModel.findOneAndUpdate(
           { _id: ID },
           { status: "Inactive" },
           { new: true }
         );
-        
+
         if (!result) return res.status(400).json({ error: "image not found in table." });
 
         res.status(200).json({ message: "image Details", result });
@@ -801,7 +803,8 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 //gallery management
@@ -811,7 +814,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
     const id = req.userId;
     const { action } = req.body;
     req.body.userId = id;
-    
+
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
@@ -838,8 +841,8 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
             }
           }
         ]);
-  
-        
+
+
         res.status(200).send({ message: "category Name.", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
@@ -856,13 +859,13 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
     const id = req.userId;
     const { action, subjectId, courseId, ID } = req.body;
     req.body.userId = id;
-    
+
     const library = req.files;
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
       return res.status(400).send({ message: "Invalid ID." });
     }
-    
+
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
@@ -903,20 +906,20 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
           updateFields,
           { new: true }
         );
-        
+
         if (!result) return res.status(400).json({ error: "library not found in table." });
 
         res.status(200).json({ message: "library Details", result });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-      
+
         const result = await libraryModel.findOneAndUpdate(
           { _id: ID },
           { status: "Inactive" },
           { new: true }
         );
-        
+
         if (!result) return res.status(400).json({ error: "library not found in table." });
 
         res.status(200).json({ message: "library Details", result });
@@ -970,13 +973,14 @@ router.post("/coursesList", async (req, res) => {
     if (action == "readAll") {
       const result = await coursesModel.find({ subjectid: ID });
 
-      if(!result) return  res.status(400).send({ message: "no course found for the subject." });
+      if (!result) return res.status(400).send({ message: "no course found for the subject." });
 
       res.status(200).json({ message: "Course Details List.", result });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // //course - R
@@ -1009,9 +1013,9 @@ router.post("/courseRead", userValidation, async (req, res) => {
 
       if (action == "read") {
         const result = await coursesModel.find({ _id: ID });
-        
+
         const checkCourse = await enrollmentModel.findOne({ course_id: result._id });
-        if(checkCourse) {
+        if (checkCourse) {
           const video = await videoModel.find({ courseId: result._id });
           const image = await imageModel.find({ courseId: result._id });
 
@@ -1026,7 +1030,8 @@ router.post("/courseRead", userValidation, async (req, res) => {
 
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 //-----------------------------------------------------------------------------------------------
@@ -1035,7 +1040,7 @@ router.post("/courseRead", userValidation, async (req, res) => {
 router.post("/profile", tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, ID, type, firstName, lastName, emailId, mobNo, city, country } = req.body; // Extract action and status
+    const { action, type, firstName, lastName, emailId, mobNo, city, country } = req.body; // Extract action and status
     req.body.userId = id;
 
     // if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -1045,7 +1050,7 @@ router.post("/profile", tokenValidation, async (req, res) => {
     const existingUser = await BuddysModel.findOne({ _id: id });
     if (existingUser) {
       if (action == "myprofile") {
-        if(existingUser) return  res.status(200).send({ message: "profile Details,", result: existingUser });
+        if (existingUser) return res.status(200).send({ message: "profile Details,", result: existingUser });
 
         const result = await BuddysModel.findOneAndUpdate(
           { _id: existingUser._id },
@@ -1060,7 +1065,7 @@ router.post("/profile", tokenValidation, async (req, res) => {
           { new: true }
         );
 
-        if(!result) return  res.status(400).send({ message: "no profile found in the table." });
+        if (!result) return res.status(400).send({ message: "no profile found in the table." });
 
         res.status(200).send({ message: "profile Details Updated.", result });
       } else if (action == "myCourse") {
@@ -1081,27 +1086,27 @@ router.post("/profile", tokenValidation, async (req, res) => {
         } else if (type == "video") {
           const result = await videoModel.find({ userId: existingUser._id });
 
-          if(!result) return  res.status(400).send({ message: "no video found in the table." });
+          if (!result) return res.status(400).send({ message: "no video found in the table." });
 
           res.status(200).send({ message: "My video Details.", result });
         } else if (type == "image") {
           const result = await imageModel.find({ userId: existingUser._id });
 
-          if(!result) return  res.status(400).send({ message: "no image found in the table." });
+          if (!result) return res.status(400).send({ message: "no image found in the table." });
 
           res.status(200).send({ message: "My image Details.", result });
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "mySubscription") {
-        if(type == "allCourses") {
-          const result = await coursesModel.find({ });
+        if (type == "allCourses") {
+          const result = await coursesModel.find({});
 
-          if(!result) return  res.status(400).send({ message: "no course found in the table." });
+          if (!result) return res.status(400).send({ message: "no course found in the table." });
 
           res.status(200).send({ message: "Courses Details.", result });
         } else if (type == "myList") {
           const result = await coursesModel.find({ userId: existingUser._id });
 
-          if(!result) return  res.status(400).send({ message: "no course found in the table." });
+          if (!result) return res.status(400).send({ message: "no course found in the table." });
 
           res.status(200).send({ message: "My Courses Details.", result });
         } else res.status(400).send({ message: "Type Does Not Exist." });
@@ -1111,7 +1116,8 @@ router.post("/profile", tokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });  }
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 

@@ -6,11 +6,11 @@ const validator = require("validator");
 const categorySchema = new mongoose.Schema(
     {
         userId: { type: String, default: "" },
-    	name: { type: String },
-        description: { type: String },	
+        name: { type: String },
+        description: { type: String },
         icons: { type: String },
-        instructor_id: { type: String },	
-        price: { type: String },	
+        instructor_id: { type: String },
+        price: { type: String },
         // category_id: { type: String }, 	
         // created_at: { type: Date },
         lastActive: { type: Date },
@@ -26,14 +26,14 @@ const categorySchema = new mongoose.Schema(
 const coursesSchema = new mongoose.Schema(
     {
         userId: { type: String, },
-        subjectId:  { type: String },
-    	courseName: { type: String },
-        description: { type: String },	
+        subjectId: { type: String },
+        courseName: { type: String },
+        description: { type: String },
         coursePrice: { type: String },
         courseTime: { type: String },
         certificationOfCompletion: { type: Boolean },
         moreInformation: { type: String },
-        courseType:{type: Boolean}, 	
+        courseType: { type: Boolean },
         created_at: { type: Date },
         lastActive: { type: Date },
 
@@ -62,11 +62,11 @@ const studentSchema = new mongoose.Schema(
 const orderSchema = new mongoose.Schema(
     {
         userId: { type: String, default: "" },
-        course_id: { type: String },	
-        title: { type: String },	
-        video_url: { type: String },	
-        pdf_url: { type: String },	
-        duration: { type: String },	
+        course_id: { type: String },
+        title: { type: String },
+        video_url: { type: String },
+        pdf_url: { type: String },
+        duration: { type: String },
         created_at: { type: Date },
 
         status: { type: String, default: "Active" },
@@ -80,11 +80,11 @@ const orderSchema = new mongoose.Schema(
 const lessonSchema = new mongoose.Schema(
     {
         userId: { type: String, default: "" },
-        course_id: { type: String },	
-        title: { type: String },	
-        video_url: { type: String },	
-        pdf_url: { type: String },	
-        duration: { type: String },	
+        course_id: { type: String },
+        title: { type: String },
+        video_url: { type: String },
+        pdf_url: { type: String },
+        duration: { type: String },
         created_at: { type: Date },
 
         status: { type: String, default: "Active" },
@@ -98,9 +98,9 @@ const lessonSchema = new mongoose.Schema(
 const enrollmentSchema = new mongoose.Schema(
     {
         userId: { type: String, default: "" },
-        course_id: { type: String },	
+        course_id: { type: String },
         // status (active/completed)	
-        progress: { type: String },	
+        progress: { type: String },
         created_at: { type: String },
 
         status: { type: String, default: "Active" }, //completed
