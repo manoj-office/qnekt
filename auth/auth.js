@@ -2,7 +2,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const saltRound = process.env.SALTROUND;
 const accessSecretKey = "Qw3$er5*ty6&7Uio8*9P";
-const refreshSecretKey = "CDFAWR##$%TGRVTE^%%$#F#@FDDSVS";
 
 const hashPassword = async (password) => {
   let salt = await bcrypt.genSalt(saltRound);
