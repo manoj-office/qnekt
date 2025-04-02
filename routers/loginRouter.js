@@ -543,7 +543,7 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
 
     const totalCount = {
       studentList: await BuddysModel.countDocuments({ status: "Active" }),
-      deletedList: await BuddysModel.countDocuments({ status: "Inctive" }),
+      deletedList: await BuddysModel.countDocuments({ status: "Inactive" }),
       pendingList: await BuddysModel.countDocuments({ status: "Pending" }),
     };
 

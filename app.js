@@ -153,6 +153,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 app.use(cors());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/v1/", loginRouters);
 // app.use("/api/v1/", searchRouters);
