@@ -265,11 +265,13 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
 
 //subject 
 // 1. courses - CRUD
-router.post("/subject", adminTokenValidation, async (req, res) => {
+router.post("/subject", upload.single("icons"), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, name, description, icons, price, ID } = req.body;
+    const { action, name, description, price, ID } = req.body;
     req.body.userId = id;
+
+    const icons = req.file; // Change req.files to req.file
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
       return res.status(400).send({ message: "Invalid ID." });
@@ -286,6 +288,7 @@ router.post("/subject", adminTokenValidation, async (req, res) => {
           name,
           description,
           icons,
+          icons: icons ? icons.path : "", // Store path (or buffer)
           price,
         });
 
@@ -422,7 +425,7 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -450,7 +453,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -528,7 +531,7 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -565,7 +568,7 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -597,7 +600,7 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -678,7 +681,7 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -723,7 +726,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -803,7 +806,7 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -848,7 +851,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -927,7 +930,7 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -979,7 +982,7 @@ router.post("/coursesList", async (req, res) => {
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -1030,7 +1033,88 @@ router.post("/courseRead", userValidation, async (req, res) => {
 
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
+  }
+});
+
+
+router.post("/cart", tokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, courseId, ID } = req.body; // Extract action and status
+    req.body.userId = id;
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action === "create") {
+        const cardList = await cartModel.findOne({ userId: id });
+        if (cardList) {
+          const result = await cartModel.findOneAndUpdate(
+            { userId: id },
+            { $addToSet: { courseId } }, // Prevents duplicate courseId entries
+            { new: true }
+          );
+
+          return res.status(201).json({ message: "cart updated", result });
+        }
+
+        const result = new cartModel({
+          userId: id,
+          courseId,
+        });
+
+        await result.save();
+
+        res.status(201).json({ message: "cart Created", result });
+      } else if (action === "read") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
+        // const readdocument = await cartModel.findById(ID);
+        const readdocument = await cartModel.findOne({ _id: ID });
+
+        if (!readdocument) return res.status(400).json({ error: "cart not found in table." });
+
+        const result = await coursesModel.find({ _id: { $in: readdocument.courseId } });
+
+        const readdata = readdocument.toObject();
+        readdata.courseDetails = result;
+
+        // const cartWithCourses = { ...readdocument.toObject(), courseDetails: result };
+
+        res.status(200).json({ message: "cart Details", result: readdata });
+      } else if (action === "update") {
+        if (!ID) return res.status(400).json({ message: "ID required for update" });
+
+        const updateFields = {};
+
+        if (courseId) updateFields.courseId = courseId;
+
+        const updatedocument = await cartModel.findOneAndUpdate(
+          { _id: ID },
+          updateFields,
+          { new: true }
+        );
+
+        if (!updatedocument) return res.status(400).json({ error: "Student not found in the table." });
+
+        res.status(200).json({ message: "Student Details Updated ", result: updatedocument });
+      } else if (action === "delete") {
+        if (!ID) return res.status(400).json({ message: "ID required for deletion" });
+
+        const deletedocument = await cartModel.findOneAndUpdate(
+          { _id: ID },
+          { $pull: { courseId: { $in: Array.isArray(courseId) ? courseId : [courseId] } } },  // Removes specific courseId from array
+          { new: true }
+        );
+
+        if (!deletedocument) return res.status(404).json({ error: "cart not found in table." });
+
+        res.status(200).json({ message: "cart deleted ", result: deletedocument });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 
@@ -1116,7 +1200,7 @@ router.post("/profile", tokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).send({ message: "Internal Server Error", error });
   }
 });
 

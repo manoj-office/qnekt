@@ -166,13 +166,24 @@ const librarySchema = new mongoose.Schema(
     { collection: "Library" }
 );
 
+const cartSchema = new mongoose.Schema(
+    {
+        userId: { type: String },
+        courseId: { type: [String] },
+        status: { type: String, default: "Active" }, //completed
+    },
+    { timestamps: true },
+    { versionKey: false },
+    { collection: "Cart" }
+);
+
 const categoryModel = mongoose.model("Category", categorySchema);
 const coursesModel = mongoose.model("Course", coursesSchema);
 const studentModel = mongoose.model("Student", studentSchema);
 const videoModel = mongoose.model("Videos", videoSchema);
 const imageModel = mongoose.model("Images", imageSchema);
 const libraryModel = mongoose.model("Library", librarySchema);
-
+const cartModel = mongoose.model("Cart", cartSchema);
 
 const orderModel = mongoose.model("Order", orderSchema);
 const lessonsModel = mongoose.model("Lesson", lessonSchema);
@@ -188,4 +199,5 @@ module.exports = {
     videoModel,
     imageModel,
     libraryModel,
+    cartModel,
 };
