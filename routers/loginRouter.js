@@ -469,7 +469,7 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
       return res.status(400).send({ message: "Invalid ID." });
     }
 
-    const user = await BuddysModel.findOne({ _id: ID });
+    const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action === "create") {
 
