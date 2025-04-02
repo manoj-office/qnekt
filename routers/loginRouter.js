@@ -1051,7 +1051,7 @@ router.post("/cart", tokenValidation, async (req, res) => {
         if (cardList) {
           const result = await cartModel.findOneAndUpdate(
             { userId: id },
-            { $addToSet: { courseId } }, // Prevents duplicate courseId entries
+            { $addToSet: { courseId } }, 
             { new: true }
           );
 
