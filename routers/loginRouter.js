@@ -550,15 +550,15 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "studentList") {
-        const result = await BuddysModel.find({ status: "Active" });
+        const result = await BuddysModel.find({ status: "Active", role: { $ne: "admin" } }).lean();
 
         res.status(200).json({ message: "student List", totalCount, result: result });
       } else if (action == "deletedList") {
-        const result = await BuddysModel.find({ status: "Inactive" });
+        const result = await BuddysModel.find({ status: "Inactive", role: { $ne: "admin" } }).lean();
 
         res.status(200).json({ message: "deleted List", totalCount, result: result });
       } else if (action == "pendingList") {
-        const result = await BuddysModel.find({ status: "Pending" });
+        const result = await BuddysModel.find({ status: "Pending", role: { $ne: "admin" } }).lean();
 
         res.status(200).json({ message: "pending List", totalCount, result: result });
       } else res.status(400).send({ message: "Action Does Not Exist." });

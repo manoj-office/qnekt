@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema(
     emailId: { type: String },
     countryCode: { type: String },
     mobNo: { type: String },
+    image: { type: String, default: "" },
     dob: { type: Date },
     password: { type: String },
     isOtpVerified: { type: Boolean, default: false },
