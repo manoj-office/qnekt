@@ -463,7 +463,7 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
     const { action, firstName, lastName, email, mobNo, ID } = req.body;
     req.body.userId = id;
 
-    const image = req.files;
+    const image = req.file; // Change req.files to req.file
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
       return res.status(400).send({ message: "Invalid ID." });
@@ -478,7 +478,7 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
           lastName,
           emailId: email,
           mobNo,
-          image,
+          image: image ? image.path : "", // Store path (or buffer)
         });
 
         await newStudentList.save();
@@ -500,7 +500,7 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
         if (lastName) updateFields.lastName = lastName;
         if (email) updateFields.emailId = email;
         if (mobNo) updateFields.mobNo = mobNo;
-        if (image) updateFields.image = image; // Update only if new file is uploaded
+        if (image) updateFields.image = image.path;
 
 
         const updatedocument = await BuddysModel.findOneAndUpdate(
@@ -610,7 +610,7 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
-    const video = req.files;
+    const videos = req.files.map(file => file.path); // Store paths instead of whole file objects
 
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -624,7 +624,7 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
           userId: id,
           categoryId,
           courseId,
-          video,
+          video: videos, // Store file paths
           name,
           description,
           icons,
@@ -647,7 +647,7 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (video) updateFields.video = video; // Update only if new file is uploaded
+        if (req.files && req.files.length > 0) updateFields.video = videos; // Update only if new files uploaded
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
         if (icons) updateFields.icons = icons;
@@ -735,7 +735,7 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
-    const image = req.files;
+    const images = req.files.map(file => file.path); // Store paths instead of whole file objects
 
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -749,7 +749,7 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
           userId: id,
           categoryId,
           courseId,
-          image,
+          image: images,
           name,
           description,
           icons,
@@ -772,7 +772,7 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (image) updateFields.image = image; // Update only if new file is uploaded
+        if (req.files && req.files.length > 0) updateFields.image = images; // Update only if new files uploaded
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
         if (icons) updateFields.icons = icons;
@@ -860,7 +860,7 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
     const { action, subjectId, courseId, ID } = req.body;
     req.body.userId = id;
 
-    const library = req.files;
+    const libraries = req.files.map(file => file.path); // Store paths instead of whole file objects
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
       return res.status(400).send({ message: "Invalid ID." });
@@ -873,7 +873,7 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
           userId: id,
           categoryId: subjectId,
           courseId,
-          library,
+          library: libraries,
           name,
           description,
           icons,
@@ -896,7 +896,7 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (library) updateFields.library = library; // Update only if new file is uploaded
+        if (req.files && req.files.length > 0) updateFields.library = libraries; // Update only if new files uploaded
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
         if (icons) updateFields.icons = icons;
