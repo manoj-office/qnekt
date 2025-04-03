@@ -177,6 +177,27 @@ const cartSchema = new mongoose.Schema(
     { collection: "Cart" }
 );
 
+
+const siteSettingsSchema = new mongoose.Schema(
+    {
+        companyName: { type: String },
+        emailId: { type: String },
+        contact1: { type: String },
+        contact2: { type: String },
+        address: { type: String },
+        faviconLogo: { type: String },
+        companyLogo: { type: String },
+        waterMarkLogo: { type: String },
+        mobileAuth: { type: Boolean },
+        googleAuth: { type: Boolean },
+        emailAuth: { type: Boolean },
+        status: { type: String, default: "Active" }, //completed
+    },
+    { timestamps: true },
+    { versionKey: false },
+    { collection: "site Settings" }
+);
+
 const categoryModel = mongoose.model("Category", categorySchema);
 const coursesModel = mongoose.model("Course", coursesSchema);
 const studentModel = mongoose.model("Student", studentSchema);
@@ -184,6 +205,9 @@ const videoModel = mongoose.model("Videos", videoSchema);
 const imageModel = mongoose.model("Images", imageSchema);
 const libraryModel = mongoose.model("Library", librarySchema);
 const cartModel = mongoose.model("Cart", cartSchema);
+
+const siteSettingsModel = mongoose.model("site Settings", siteSettingsSchema);
+
 
 const orderModel = mongoose.model("Order", orderSchema);
 const lessonsModel = mongoose.model("Lesson", lessonSchema);
@@ -200,4 +224,5 @@ module.exports = {
     imageModel,
     libraryModel,
     cartModel,
+    siteSettingsModel,
 };

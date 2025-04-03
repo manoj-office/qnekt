@@ -437,7 +437,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
     const { action, ID } = req.body; // Extract action and status
     req.body.userId = id;
 
-    if (!ID) return res.status(400).json({ message: "Missing required fields" });
+    if (!ID) return res.status(400).json({ message: "ID is required." });
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
       return res.status(400).send({ message: "Invalid ID." });
@@ -971,7 +971,7 @@ router.post("/coursesList", async (req, res) => {
     const { action, ID } = req.body; // Extract action and status
     req.body.userId = id;
 
-    if (!ID) return res.status(400).json({ message: "Missing required fields" });
+    if (!ID) return res.status(400).json({ message: "ID is required." });
 
     if (action == "readAll") {
       const result = await coursesModel.find({ subjectid: ID });
@@ -1204,6 +1204,98 @@ router.post("/profile", tokenValidation, async (req, res) => {
   }
 });
 
+
+//admin
+//siteSettings
+router.post("/siteSettings", upload.fields([
+  { name: "faviconLogo", maxCount: 1 },
+  { name: "companyLogo", maxCount: 1 },
+  { name: "waterMarkLogo", maxCount: 1 },
+]), adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, companyName, emailId, contact1, contact2, address, mobile, google, email, ID } = req.body; // Extract action and status
+    req.body.userId = id;
+
+    const existingUser = await BuddysModel.findOne({ _id: id });
+    if (existingUser) {
+      if (action == "create") {
+        const result = new siteSettingsModel({
+          companyName,
+          emailId,
+          contact1,
+          contact2,
+          address,
+          faviconLogo: req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : "",
+          companyLogo: req.files["companyLogo"] ? req.files["companyLogo"][0].path : "",
+          waterMarkLogo: req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : "",
+          mobileAuth: mobile,
+          googleAuth: google,
+          emailAuth: email,
+        });
+
+        await result.save();
+
+        res.status(201).send({ message: "Site settings created successfully", result });
+      } else if (action == "read") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
+        const result = await siteSettingsModel.findOne({ _id: ID, status: "Active" });
+
+        if (!result) return res.status(400).json({ error: "site Settings not found in table." });
+
+        res.status(201).send({ message: "Site settings Details", result });
+      } else if (action == "update") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
+        const existingSettings = await siteSettingsModel.findOne({ _id: ID });
+        if (!existingSettings) return res.status(400).json({ message: "Site settings not found." });
+
+        let updatedData = {};
+        if (companyName) updatedData.companyName = companyName;
+
+        if (emailId) updatedData.emailId = emailId;
+        if (contact1) updatedData.contact1 = contact1;
+        if (contact2) updatedData.contact2 = contact2;
+        if (address) updatedData.address = address;
+        if (faviconLogo) updatedData.faviconLogo = req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : existingSettings.faviconLogo;
+        if (companyLogo) updatedData.companyLogo = req.files["companyLogo"] ? req.files["companyLogo"][0].path : existingSettings.companyLogo;
+        if (waterMarkLogo) updatedData.waterMarkLogo = req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : existingSettings.waterMarkLogo;
+
+        // Corrected boolean checks
+        if (mobileAuth !== undefined) updatedData.mobileAuth = mobileAuth;
+        if (googleAuth !== undefined) updatedData.googleAuth = googleAuth;
+        if (emailAuth !== undefined) updatedData.emailAuth = emailAuth;
+
+
+        const result = await siteSettingsModel.findOneAndUpdate(
+          { _id: ID },
+          updatedData,
+          { new: true }
+        );
+
+        if (!result) return res.status(400).json({ error: "cart not found in table." });
+
+        res.status(201).send({ message: "Site settings Updated", result });
+      } else if (action == "delete") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
+        const result = await siteSettingsModel.findOneAndUpdate(
+          { _id: ID },
+          { status: "Inactive" },
+          { new: true }
+        );
+
+        if (!result) return res.status(400).json({ error: "site Settings not found in table." });
+
+        res.status(201).send({ message: "site Settings Deleted", result });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error", error });
+  }
+});
 
 
 module.exports = router;
