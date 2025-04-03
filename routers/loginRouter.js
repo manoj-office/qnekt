@@ -1264,7 +1264,7 @@ router.post("/siteSettings", upload.fields([
 ]), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, companyName, emailId, contact1, contact2, address, mobile, google, email, ID } = req.body; // Extract action and status
+    const { action, companyName, emailId, contact1, contact2, address, mobileAuth, googleAuth, emailAuth, ID } = req.body;
     req.body.userId = id;
 
     const existingUser = await BuddysModel.findOne({ _id: id });
@@ -1279,9 +1279,9 @@ router.post("/siteSettings", upload.fields([
           faviconLogo: req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : "",
           companyLogo: req.files["companyLogo"] ? req.files["companyLogo"][0].path : "",
           waterMarkLogo: req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : "",
-          mobileAuth: mobile,
-          googleAuth: google,
-          emailAuth: email,
+          mobileAuth,
+          googleAuth,
+          emailAuth,
         });
 
         await result.save();
@@ -1308,9 +1308,9 @@ router.post("/siteSettings", upload.fields([
         if (contact1) updatedData.contact1 = contact1;
         if (contact2) updatedData.contact2 = contact2;
         if (address) updatedData.address = address;
-        if (faviconLogo) updatedData.faviconLogo = req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : existingSettings.faviconLogo;
-        if (companyLogo) updatedData.companyLogo = req.files["companyLogo"] ? req.files["companyLogo"][0].path : existingSettings.companyLogo;
-        if (waterMarkLogo) updatedData.waterMarkLogo = req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : existingSettings.waterMarkLogo;
+        if (faviconLogo) updatedData.faviconLogo = req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : "";
+        if (companyLogo) updatedData.companyLogo = req.files["companyLogo"] ? req.files["companyLogo"][0].path : "";
+        if (waterMarkLogo) updatedData.waterMarkLogo = req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : "";
 
         // Corrected boolean checks
         if (mobileAuth !== undefined) updatedData.mobileAuth = mobileAuth;

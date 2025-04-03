@@ -188,9 +188,9 @@ const siteSettingsSchema = new mongoose.Schema(
         faviconLogo: { type: String },
         companyLogo: { type: String },
         waterMarkLogo: { type: String },
-        mobileAuth: { type: Boolean },
-        googleAuth: { type: Boolean },
-        emailAuth: { type: Boolean },
+        mobileAuth: { type: Boolean, default: false  },
+        googleAuth: { type: Boolean, default: false  },
+        emailAuth: { type: Boolean, default: false },
         status: { type: String, default: "Active" }, //completed
     },
     { timestamps: true },

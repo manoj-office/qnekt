@@ -4,7 +4,6 @@ let path = require("path");
 let cookieParser = require("cookie-parser");
 let logger = require("morgan");
 let cors = require("cors");
-let socket = require("socket.io");
 const connectDB = require("./config/mongoDbConfig"); // Ensure MongoDB connection is established
 
 // let budsRouters = require("./routes/budsRouters");
