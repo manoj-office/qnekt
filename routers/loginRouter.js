@@ -6,7 +6,7 @@ const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenVa
 const { hashCompare, hashPassword, createToken, createRefreshToken } = require("../auth/auth.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
 const { generateUsername } = require("../services/loginFunctions.js");
-const { categoryModel, coursesModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel } = require("../schema/tableSchema.js");
+const { categoryModel, coursesModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel, siteSettingsModel } = require("../schema/tableSchema.js");
 
 
 const fs = require('fs');
@@ -1051,7 +1051,7 @@ router.post("/cart", tokenValidation, async (req, res) => {
         if (cardList) {
           const result = await cartModel.findOneAndUpdate(
             { userId: id },
-            { $addToSet: { courseId } }, // Prevents duplicate courseId entries
+            { $addToSet: { courseId } }, 
             { new: true }
           );
 
