@@ -1114,6 +1114,56 @@ router.post("/cart", tokenValidation, async (req, res) => {
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+})
+
+
+//status
+router.post("/status", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID, status } = req.body;
+    req.body.userId = id;
+
+    const validStatuses = ["Active", "Inactive", "Pending"];
+    if (status && !validStatuses.includes(status)) {
+      return res.status(400).json({ message: "Invalid status. Allowed values: Active, Inactive, Pending." });
+    }
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    if (action === "user") {
+      if (!ID) return res.status(400).json({ message: "ID is required " });
+
+      const updateduser = await BuddysModel.findOneAndUpdate(
+        { _id: ID },
+        { status },
+        { new: true }
+      );
+      res.status(200).json({ message: "Status Updated ", result: updateduser });
+    } else if (action === "course") {
+      if (!ID) return res.status(400).json({ message: "ID is required " });
+
+      const updatedcourse = await coursesModel.findOneAndUpdate(
+        { _id: ID },
+        { status },
+        { new: true }
+      );
+      res.status(200).json({ message: "Status Updated ", result: updatedcourse });
+    } else if (action === "subject") {
+      if (!ID) return res.status(400).json({ message: "ID is required " });
+
+      const updateduser = await categoryModel.findOneAndUpdate(
+        { _id: ID },
+        { status },
+        { new: true }
+      );
+      res.status(200).json({ message: "Status Updated ", result: updateduser });
+    } else res.status(400).send({ message: "Action Does Not Exist." });
+  } catch (error) {
+    console.log(error);
     res.status(500).send({ message: "Internal Server Error", error });
   }
 });
