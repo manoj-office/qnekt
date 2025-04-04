@@ -34,28 +34,29 @@ const userSchema = new mongoose.Schema(
   { collection: "Users" }
 );
 
-// 2-Buddies Login Schema :
-const tokenSchema = new mongoose.Schema(
+// 2- FCM token Schema :
+const userNotificationDevicesSchema = new mongoose.Schema(
   {
-    userId: { type: String, default: "" },
-    emailId: { type: String },
-    countryCode: { type: String, set: value => value && value.charAt(0) === '+' ? value.slice(1) : value },
-    mobNo: { type: Number },
-    token: { type: String },
-    refreshToken: { type: String },
-    tokenStatus: { type: String, default: "Active" },
+    userId: { type: String, required: true },
+    devices: [{
+      device_type: { type: String, }, //enum: ['android', 'ios', 'web'],   
+      fcm_token: { type: String },
+      last_login: { type: Date },
+    }],
   },
-  { timestamps: true },
-  { versionKey: false },
-  { collection: "Token" }
+  {
+    timestamps: true,
+    versionKey: false,
+    collection: "User Notification Devices",
+  }
 );
 
 
 
 const BuddysModel = mongoose.model("Users", userSchema);
-const tokenModel = mongoose.model("Token", tokenSchema);
+const userNotificationDevicesModel = mongoose.model("User Notification Devices", userNotificationDevicesSchema);
 
 module.exports = {
-  tokenModel,
+  userNotificationDevicesModel,
   BuddysModel,
 };

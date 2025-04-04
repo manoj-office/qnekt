@@ -1,27 +1,33 @@
 const firebase = require("firebase-admin");
 
-// const serviceAccount = require("../firebase-config.json");
-const serviceAccount = "";
+// Import Firebase service account credentials
+const serviceAccount = require("../qnekt-1e590-firebase-adminsdk-fbsvc-1955c865c6.json");
 firebase.initializeApp({
   credential: firebase.credential.cert(serviceAccount),
 });
 
+const messaging = firebase.messaging();
 
-// Function to send push notifications
-const sendPushNotification = async (deviceToken, title, body) => {
+// Function to send push notifications to multiple users
+const sendPushNotification = async (deviceTokens, title, body) => {
+  if (!Array.isArray(deviceTokens) || deviceTokens.length === 0) {
+    console.error("Device tokens must be a non-empty array.");
+    return;
+  }
+
   const message = {
     notification: {
       title: title,
       body: body,
     },
-    token: deviceToken, // Device Token from client app
+    tokens: deviceTokens, // Array of device tokens
   };
 
   try {
-    const response = await admin.messaging().sendEachForMulticast(message);
-    console.log("Successfully sent message:", response);
+    const response = await messaging.sendMulticast(message);
+    console.log("Successfully sent messages:", response);
   } catch (error) {
-    console.error("Error sending message:", error);
+    console.error("Error sending messages:", error);
   }
 };
 

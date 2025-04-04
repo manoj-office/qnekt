@@ -95,7 +95,7 @@ router.post("/signup", async (req, res) => {
 // 2. sign in
 router.post("/login", async (req, res) => {
   try {
-    const { email, mobNo } = req.body;
+    const { email, mobNo, deviceType, fcm } = req.body;
     let user;
     let loginType = "";  // Add this to track login type
 
@@ -178,6 +178,45 @@ router.post("/login", async (req, res) => {
         //     let tokenStore = new tokenModel(req.body);
         //     await tokenStore.save();
         // }
+
+        if (fcm.length > 50 && fcm) {
+          const fcm_Token = await userNotificationDevicesModel.findOne({
+            'devices.device_type': deviceType,
+            userId: user._id,
+          });
+
+          if (fcm_Token) {
+            // Update the specific device's FCM token and last login
+            await userNotificationDevicesModel.updateOne(
+              { 'devices.device_type': deviceType, userId: user._id },
+              {
+                $set: {
+                  "devices.$.last_login": new Date(),
+                  "devices.$.fcm_token": fcm,
+                }
+              },
+              { upsert: true }
+            );
+          } else {
+            // Add a new device if it doesn't exist for this userId
+            await userNotificationDevicesModel.updateOne(
+              { userId: user._id },
+              {
+                $push: {
+                  devices: {
+                    device_type: deviceType,
+                    fcm_token: fcm,
+                    last_login: new Date(),
+                  }
+                }
+              },
+              { upsert: true }
+            );
+          }
+
+        } else {
+          var FCM = "Please enter Valid FCM Token.";
+        }
 
         res.status(201).send({ message: "Login Successfully", token, refreshToken, result: user });
       } else res.status(400).send({ message: "Invalid Credentials" });
@@ -1359,21 +1398,24 @@ router.post("/siteSettings", upload.fields([
 });
 
 
+// admin
+// notification
 router.post("/notification", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, title, body } = req.body;
     req.body.userId = id;
 
-    if (action === "user") {
+    const existingUser = await BuddysModel.findOne({ _id: id });
+    if (existingUser) {
+      if (action === "flash") {
+        const result = await model.findOne({ userId: id }).select("devices.fcm_token");
 
-      // find userId id
-      // only deviceToken and passit to 
-      sendPushNotification()
-      res.status(200).json({ message: "Notification Sent", result: messages });
-    } else {
-      res.status(400).json({ message: "Action Does Not Exist." });
-    }
+        await sendPushNotification(result, title, body);
+
+        res.status(200).json({ message: "Flash message Sent", result });
+      } else res.status(400).json({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal Server Error", error });
