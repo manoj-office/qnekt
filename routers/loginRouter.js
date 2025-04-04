@@ -473,8 +473,12 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
 router.post("/coursesList", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, ID } = req.body; // Extract action and status
+    // const { action, ID } = req.body; // Extract action and status
+    const { action, searchKeyword, currentPage, pageSize, ID } = req.body; // Extract action and status
+
     req.body.userId = id;
+
+    const skip = (currentPage - 1) * pageSize;
 
     if (!ID) return res.status(400).json({ message: "ID is required." });
 
@@ -485,7 +489,16 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
-        const result = await coursesModel.find({ subjectid: ID });
+
+        const filter = searchKeyword
+          ? { courseName: { $regex: searchKeyword, $options: "i" } }
+          : {};
+
+        const existingCategory = await categoryModel.findOne({ _id: ID });
+        if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
+
+        const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);;
+        // const result = await coursesModel.find({ subjectid: ID });
 
         res.status(200).json({ message: "Data received", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
@@ -729,8 +742,10 @@ router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async
 router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action } = req.body;
+    const { action, searchKeyword, currentPage, pageSize } = req.body;
     req.body.userId = id;
+
+    const skip = (currentPage - 1) * pageSize;
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
@@ -745,6 +760,11 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
             }
           },
           {
+            $match: {
+              name: { $regex: searchKeyword, $options: 'i' }
+            }
+          },
+          {
             $unwind: {
               path: "$courseInfo",
               preserveNullAndEmptyArrays: true // Keeps categories without courses
@@ -756,6 +776,12 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
               description: 1,
               courseName: "$courseInfo.courseName" // Extract course name
             }
+          },
+          {
+            $skip: skip
+          },
+          {
+            $limit: pageSize
           }
         ]);
 
@@ -854,8 +880,11 @@ router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async
 router.post("/adminImageList", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action } = req.body;
+    const { action, searchKeyword, currentPage, pageSize } = req.body;
     req.body.userId = id;
+
+    const skip = (currentPage - 1) * pageSize;
+
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
@@ -870,6 +899,11 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
             }
           },
           {
+            $match: {
+              name: { $regex: searchKeyword, $options: 'i' }
+            }
+          },
+          {
             $unwind: {
               path: "$courseInfo",
               preserveNullAndEmptyArrays: true // Keeps categories without courses
@@ -881,6 +915,12 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
               description: 1,
               courseName: "$courseInfo.courseName" // Extract course name
             }
+          },
+          {
+            $skip: skip
+          },
+          {
+            $limit: pageSize
           }
         ]);
 
@@ -1037,6 +1077,7 @@ router.post("/listCourses", async (req, res) => {
 });
 
 // //course - R
+
 // router.post("/courseRead", async (req, res) => {
 //   try {
 //     const id = req.userId;
@@ -1101,7 +1142,7 @@ router.post("/cart", tokenValidation, async (req, res) => {
         if (cardList) {
           const result = await cartModel.findOneAndUpdate(
             { userId: id },
-            { $addToSet: { courseId } }, 
+            { $addToSet: { courseId } },
             { new: true }
           );
 
@@ -1422,31 +1463,28 @@ router.post("/notification", adminTokenValidation, async (req, res) => {
   }
 });
 
-router.post("/courseEntrollment" , tokenValidation, async (req, res) => {
+router.post("/courseEntrollment", tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, courseId } = req.body; // Extract action and status
-    req.body.userId = id; 
-    
-    if (!action || !courseId)return res.status(400).json({ message: "All  fields are required " });
-  
+    req.body.userId = id;
+
+    if (!action || !courseId) return res.status(400).json({ message: "All  fields are required " });
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
         const newOrder = new orderModel({
           userId: id,
-          course_id : courseId,
+          course_id: courseId,
         });
-
-        
         const enrollment = new enrollmentModel({
           userId: id,
-          course_id : courseId,
+          course_id: courseId,
         });
 
         await newOrder.save();
-        
+
         const result = await coursesModel.findOne({ _id: courseId });
 
         const readdata = newOrder.toObject();
@@ -1458,9 +1496,41 @@ router.post("/courseEntrollment" , tokenValidation, async (req, res) => {
         const readdatas = enrollment.toObject();
         readdatas.courseDetails = results;
 
-        res.status(201).json({ message: "Order  & Entrollment Created" , Order: readdata, Enrollment : readdatas });
-      }
-    }else res.status(400).send({ message: "Action Does Not Exist." });
+        res.status(201).json({ message: "Order  & Entrollment Created", Order: readdata, Enrollment: readdatas });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exist." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+})
+
+router.post("/readCourses", tokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, courseId } = req.body; // Extract action and status
+    req.body.userId = id;
+
+    if (!courseId) return res.status(400).json({ message: "Course ID is required" });
+
+    const user = await BuddysModel.findOne({ _id: id });
+
+    if (user) {
+      if (action == "read") {
+        const courses = await orderModel.findOne({ course_id: courseId, userId: id })
+        if (courses) {
+          const result = await coursesModel.findOne({ _id: courseId });
+          const videos = await videoModel.findOne({ userId: id, courseId });
+          const images = await imageModel.findOne({ userId: id, courseId });
+
+          res.status(201).json({ message: "Course Details", result, videos, images });
+
+        } else {
+          const result = await coursesModel.findOne({ _id: courseId });
+          res.status(201).json({ message: "Course Details", result, });
+        }
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exist." });
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: "Internal server error" });
