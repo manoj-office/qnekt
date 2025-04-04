@@ -370,7 +370,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
 
         const result = await categoryModel.findOneAndUpdate(
           { _id: ID },
-          { status: "Deactive" },
+          { status: "Inactive " },
           { new: true }
         );
 
@@ -485,7 +485,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
-        const result = await coursesModel.find({ subjectid: ID });
+        const result = await coursesModel.find({ subjectId: ID });
 
         res.status(200).json({ message: "Data received", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
@@ -1067,7 +1067,7 @@ router.post("/courseRead", userValidation, async (req, res) => {
       if (action == "read") {
         const result = await coursesModel.find({ _id: ID });
 
-        const checkCourse = await enrollmentModel.findOne({ course_id: result._id });
+        const checkCourse = await enrollmentModel.findOne({ courseId: result._id });
         if (checkCourse) {
           const video = await videoModel.find({ courseId: result._id });
           const image = await imageModel.find({ courseId: result._id });
@@ -1436,13 +1436,13 @@ router.post("/courseEntrollment" , tokenValidation, async (req, res) => {
       if (action == "create") {
         const newOrder = new orderModel({
           userId: id,
-          course_id : courseId,
+          courseId : courseId,
         });
 
         
         const enrollment = new enrollmentModel({
           userId: id,
-          course_id : courseId,
+          courseId : courseId,
         });
 
         await newOrder.save();

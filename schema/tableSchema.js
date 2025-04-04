@@ -62,7 +62,7 @@ const studentSchema = new mongoose.Schema(
 const orderSchema = new mongoose.Schema(
     {
         userId: { type: String, default: "" },
-        course_id: { type: String },
+        courseId: { type: String },
         title: { type: String },
         video_url: { type: String },
         pdf_url: { type: String },
@@ -80,7 +80,7 @@ const orderSchema = new mongoose.Schema(
 const lessonSchema = new mongoose.Schema(
     {
         userId: { type: String, default: "" },
-        course_id: { type: String },
+        courseId: { type: String },
         title: { type: String },
         video_url: { type: String },
         pdf_url: { type: String },
@@ -98,7 +98,7 @@ const lessonSchema = new mongoose.Schema(
 const enrollmentSchema = new mongoose.Schema(
     {
         userId: { type: String, default: "" },
-        course_id: { type: String },
+        courseId: { type: String },
         // status (active/completed)	
         progress: { type: String },
         created_at: { type: String },
