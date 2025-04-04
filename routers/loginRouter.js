@@ -6,7 +6,7 @@ const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenVa
 const { hashCompare, hashPassword, createToken, createRefreshToken } = require("../auth/auth.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
 const { generateUsername } = require("../services/loginFunctions.js");
-const { categoryModel, coursesModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel, siteSettingsModel } = require("../schema/tableSchema.js");
+const { categoryModel, coursesModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel, siteSettingsModel, enrollmentModel } = require("../schema/tableSchema.js");
 
 
 const fs = require('fs');
@@ -965,16 +965,27 @@ router.post("/subjectList", async (req, res) => {
   }
 });
 
-router.post("/coursesList", async (req, res) => {
+router.post("/listCourses", async (req, res) => {
   try {
     const id = req.userId;
-    const { action, ID } = req.body; // Extract action and status
+    const { action, searchKeyword, currentPage, pageSize, ID } = req.body; // Extract action and status
     req.body.userId = id;
+
+    const skip = (currentPage - 1) * pageSize;
+
 
     if (!ID) return res.status(400).json({ message: "ID is required." });
 
     if (action == "readAll") {
-      const result = await coursesModel.find({ subjectid: ID });
+
+      const filter = searchKeyword
+        ? { courseName: { $regex: searchKeyword, $options: "i" } }
+        : {};
+
+      const existingCategory = await categoryModel.findOne({ _id: ID });
+      if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
+
+      const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);;
 
       if (!result) return res.status(400).send({ message: "no course found for the subject." });
 
@@ -1347,5 +1358,71 @@ router.post("/siteSettings", upload.fields([
   }
 });
 
+
+router.post("/notification", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, title, body } = req.body;
+    req.body.userId = id;
+
+    if (action === "user") {
+
+      // find userId id
+      // only deviceToken and passit to 
+      sendPushNotification()
+      res.status(200).json({ message: "Notification Sent", result: messages });
+    } else {
+      res.status(400).json({ message: "Action Does Not Exist." });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal Server Error", error });
+  }
+});
+
+router.post("/courseEntrollment" , tokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, courseId } = req.body; // Extract action and status
+    req.body.userId = id; 
+    
+    if (!action || !courseId)return res.status(400).json({ message: "All  fields are required " });
+  
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action == "create") {
+        const newOrder = new orderModel({
+          userId: id,
+          course_id : courseId,
+        });
+
+        
+        const enrollment = new enrollmentModel({
+          userId: id,
+          course_id : courseId,
+        });
+
+        await newOrder.save();
+        
+        const result = await coursesModel.findOne({ _id: courseId });
+
+        const readdata = newOrder.toObject();
+        readdata.courseDetails = result;
+
+        await enrollment.save();
+        const results = await coursesModel.findOne({ _id: courseId });
+
+        const readdatas = enrollment.toObject();
+        readdatas.courseDetails = results;
+
+        res.status(201).json({ message: "Order  & Entrollment Created" , Order: readdata, Enrollment : readdatas });
+      }
+    }else res.status(400).send({ message: "Action Does Not Exist." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+})
 
 module.exports = router;
