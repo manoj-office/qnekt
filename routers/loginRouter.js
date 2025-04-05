@@ -1277,9 +1277,11 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
     const existingUser = await BuddysModel.findOne({ _id: id });
     if (existingUser) {
       if (action == "myprofile") {
-        if (existingUser) return res.status(200).send({ message: "profile Details,", result: existingUser });
+        if (type == "read") {
 
-        if (type == "update") {
+          res.status(200).send({ message: "profile Details,", result: existingUser });
+        } else if (type == "update") {
+          
           const result = await BuddysModel.findOneAndUpdate(
             { _id: existingUser._id },
             {
