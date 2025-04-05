@@ -1262,11 +1262,13 @@ router.post("/status", adminTokenValidation, async (req, res) => {
 //-----------------------------------------------------------------------------------------------
 
 //profile
-router.post("/profile", tokenValidation, async (req, res) => {
+router.post("/profile", upload.single("image"), tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, type, firstName, lastName, emailId, mobNo, city, country } = req.body; // Extract action and status
     req.body.userId = id;
+
+    const image = req.file; // Change req.files to req.file
 
     // if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
     //   return res.status(400).send({ message: "Invalid ID." });
@@ -1285,6 +1287,7 @@ router.post("/profile", tokenValidation, async (req, res) => {
               lastName,
               emailId,
               mobNo,
+              image: image ? image.path : "", // Store path (or buffer)
               city,
               country
             },
@@ -1339,6 +1342,17 @@ router.post("/profile", tokenValidation, async (req, res) => {
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "notification") {
 
+        // Step 1: Fetch clientIds
+        const clientData = await model.find({ clientId: { $in: id } }).select("title body");
+
+        const userDetails = await BuddysModel.findOne({ _id: id });
+        
+        const result = {
+          ...clientData._doc,
+          userDetails,
+        };
+        // fcmTokens now contains all valid tokens
+        res.status(200).send({ message: "Notification List.", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -1500,39 +1514,6 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
         readdatas.courseDetails = results;
 
         res.status(201).json({ message: "Order  & Entrollment Created", Order: readdata, Enrollment: readdatas });
-      } else res.status(400).send({ message: "Action Does Not Exist." });
-    } else res.status(400).send({ message: "User Does Not Exist." });
-  } catch (error) {
-    console.log(error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-})
-
-//same as courseRead API
-router.post("/readCourses", tokenValidation, async (req, res) => {
-  try {
-    const id = req.userId;
-    const { action, courseId } = req.body; // Extract action and status
-    req.body.userId = id;
-
-    if (!courseId) return res.status(400).json({ message: "Course ID is required" });
-
-    const user = await BuddysModel.findOne({ _id: id });
-
-    if (user) {
-      if (action == "read") {
-        const courses = await orderModel.findOne({ course_id: courseId, userId: id })
-        if (courses) {
-          const result = await coursesModel.findOne({ _id: courseId });
-          const videos = await videoModel.findOne({ userId: id, courseId });
-          const images = await imageModel.findOne({ userId: id, courseId });
-
-          res.status(201).json({ message: "Course Details", result, videos, images });
-
-        } else {
-          const result = await coursesModel.findOne({ _id: courseId });
-          res.status(201).json({ message: "Course Details", result, });
-        }
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exist." });
   } catch (error) {
