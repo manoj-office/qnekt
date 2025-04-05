@@ -1277,22 +1277,24 @@ router.post("/profile", tokenValidation, async (req, res) => {
       if (action == "myprofile") {
         if (existingUser) return res.status(200).send({ message: "profile Details,", result: existingUser });
 
-        const result = await BuddysModel.findOneAndUpdate(
-          { _id: existingUser._id },
-          {
-            firstName,
-            lastName,
-            emailId,
-            mobNo,
-            city,
-            country
-          },
-          { new: true }
-        );
+        if (type == "update") {
+          const result = await BuddysModel.findOneAndUpdate(
+            { _id: existingUser._id },
+            {
+              firstName,
+              lastName,
+              emailId,
+              mobNo,
+              city,
+              country
+            },
+            { new: true }
+          );
 
-        if (!result) return res.status(400).send({ message: "no profile found in the table." });
+          if (!result) return res.status(400).send({ message: "no profile found in the table." });
 
-        res.status(200).send({ message: "profile Details Updated.", result });
+          res.status(200).send({ message: "profile Details Updated.", result });
+        } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "myCourse") {
 
         const result = {
@@ -1329,7 +1331,7 @@ router.post("/profile", tokenValidation, async (req, res) => {
 
           res.status(200).send({ message: "Courses Details.", result });
         } else if (type == "myList") {
-          const result = await coursesModel.find({ userId: existingUser._id });
+          const result = await enrollmentModel.find({ userId: existingUser._id });
 
           if (!result) return res.status(400).send({ message: "no course found in the table." });
 
@@ -1450,7 +1452,7 @@ router.post("/notification", adminTokenValidation, async (req, res) => {
     const existingUser = await BuddysModel.findOne({ _id: id });
     if (existingUser) {
       if (action === "flash") {
-        const result = await model.findOne({ userId: id }).select("devices.fcm_token");
+        const result = await userNotificationDevicesModel.find({ }).select("devices.fcm_token");
 
         await sendPushNotification(result, title, body);
 
@@ -1463,6 +1465,7 @@ router.post("/notification", adminTokenValidation, async (req, res) => {
   }
 });
 
+//user enrollment to a course
 router.post("/courseEntrollment", tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
@@ -1505,6 +1508,7 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
   }
 })
 
+//same as courseRead API
 router.post("/readCourses", tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
