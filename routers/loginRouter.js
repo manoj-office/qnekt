@@ -1377,6 +1377,13 @@ router.post("/siteSettings", upload.fields([
     const { action, companyName, emailId, contact1, contact2, address, mobileAuth, googleAuth, emailAuth, ID } = req.body;
     req.body.userId = id;
 
+    // Coerce string to boolean (only "true" should be true, everything else is false)
+    const parseBool = (value) => value === 'true' || value === true;
+
+    const mobileAuthBool = parseBool(mobileAuth);
+    const googleAuthBool = parseBool(googleAuth);
+    const emailAuthBool = parseBool(emailAuth);
+
     const existingUser = await BuddysModel.findOne({ _id: id });
     if (existingUser) {
       if (action == "create") {
@@ -1389,9 +1396,9 @@ router.post("/siteSettings", upload.fields([
           faviconLogo: req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : "",
           companyLogo: req.files["companyLogo"] ? req.files["companyLogo"][0].path : "",
           waterMarkLogo: req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : "",
-          mobileAuth,
-          googleAuth,
-          emailAuth,
+          mobileAuth: mobileAuthBool,
+          googleAuth: googleAuthBool,
+          emailAuth: emailAuthBool,
         });
 
         await result.save();
@@ -1423,9 +1430,10 @@ router.post("/siteSettings", upload.fields([
         if (waterMarkLogo) updatedData.waterMarkLogo = req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : "";
 
         // Corrected boolean checks
-        if (mobileAuth !== undefined) updatedData.mobileAuth = mobileAuth;
-        if (googleAuth !== undefined) updatedData.googleAuth = googleAuth;
-        if (emailAuth !== undefined) updatedData.emailAuth = emailAuth;
+        // For update:
+        if (mobileAuth !== undefined) updatedData.mobileAuth = mobileAuthBool;
+        if (googleAuth !== undefined) updatedData.googleAuth = googleAuthBool;
+        if (emailAuth !== undefined) updatedData.emailAuth = emailAuthBool;
 
 
         const result = await siteSettingsModel.findOneAndUpdate(
