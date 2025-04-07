@@ -1304,10 +1304,10 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
       } else if (action == "myCourse") {
 
         const result = {
-          enrolledCourse: await lessonsModel.countDocuments({ status: "Active" }),
-          inProgressCourse: await lessonsModel.countDocuments({ status: "InProgress" }),
-          completedCourse: await lessonsModel.countDocuments({ status: "Completed" }),
-          failedCourse: await lessonsModel.countDocuments({ status: "deleted" }),
+          enrolledCourse: await enrollmentModel.countDocuments({ status: "Active", userId: id }),
+          inProgressCourse: await lessonsModel.countDocuments({ status: "InProgress", userId: id }),
+          completedCourse: await lessonsModel.countDocuments({ status: "Completed", userId: id }),
+          failedCourse: await lessonsModel.countDocuments({ status: "deleted", userId: id }),
         };
 
         res.status(200).send({ message: "myCourse Details.", result });
@@ -1405,9 +1405,9 @@ router.post("/siteSettings", upload.fields([
 
         res.status(201).send({ message: "Site settings created successfully", result });
       } else if (action == "read") {
-        if (!ID) return res.status(400).json({ message: "ID is required" });
-
-        const result = await siteSettingsModel.findOne({ _id: ID, status: "Active" });
+        // if (!ID) return res.status(400).json({ message: "ID is required" });
+        //  _id: ID, status: "Active"
+        const result = await siteSettingsModel.findOne({ });
 
         if (!result) return res.status(400).json({ error: "site Settings not found in table." });
 
