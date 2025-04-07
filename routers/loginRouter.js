@@ -665,7 +665,7 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
-    const videos = req.files.map(file => file.path); // Store paths instead of whole file objects
+    const videos = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
 
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -804,7 +804,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
     
-    const images = req.files.map(file => file.path); // Store paths instead of whole file objects
+    const images = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
 
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
@@ -940,10 +940,10 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 router.post("/library", upload.array("library", 10), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, categoryId, courseId, name, description, ID } = req.body;
+    const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
 
-    const libraries = req.files.map(file => file.path); // Store paths instead of whole file objects
+    const libraries = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
       return res.status(400).send({ message: "Invalid ID." });
@@ -964,7 +964,7 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
 
         await result.save();
 
-        res.status(200).send({ message: "library succefully uploaded.", result });
+        res.status(200).send({ message: "library successfully created.", result });
       } else if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
