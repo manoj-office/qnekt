@@ -1425,9 +1425,18 @@ router.post("/siteSettings", upload.fields([
         if (contact1) updatedData.contact1 = contact1;
         if (contact2) updatedData.contact2 = contact2;
         if (address) updatedData.address = address;
-        if (faviconLogo) updatedData.faviconLogo = req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : "";
-        if (companyLogo) updatedData.companyLogo = req.files["companyLogo"] ? req.files["companyLogo"][0].path : "";
-        if (waterMarkLogo) updatedData.waterMarkLogo = req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : "";
+        
+        if (req.files && req.files["faviconLogo"]) {
+          updatedData.faviconLogo = req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : "";
+        }
+
+        if (req.files && req.files["companyLogo"]) {
+          updatedData.companyLogo = req.files["companyLogo"] ? req.files["companyLogo"][0].path : "";
+        }
+
+        if (req.files && req.files["waterMarkLogo"]) {
+          updatedData.waterMarkLogo = req.files["waterMarkLogo"] ? req.files["waterMarkLogo"][0].path : "";
+        }
 
         // Corrected boolean checks
         // For update:
