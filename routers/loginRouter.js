@@ -497,7 +497,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
         const existingCategory = await categoryModel.findOne({ _id: ID });
         if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
-        const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);;
+        const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
         // const result = await coursesModel.find({ subjectId: ID });
 
         res.status(200).json({ message: "Data received", result });
@@ -1065,7 +1065,7 @@ router.post("/listCourses", async (req, res) => {
       const existingCategory = await categoryModel.findOne({ _id: ID });
       if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
-      const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);;
+      const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
 
       if (!result) return res.status(400).send({ message: "no course found for the subject." });
 
@@ -1266,8 +1266,11 @@ router.post("/status", adminTokenValidation, async (req, res) => {
 router.post("/profile", upload.single("image"), tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, type, firstName, lastName, emailId, mobNo, city, country, password } = req.body; // Extract action and status
+    const { action, type, firstName, lastName, emailId, mobNo, city, country, password, searchKeyword, currentPage, pageSize } = req.body; // Extract action and status
     req.body.userId = id;
+
+
+    const skip = (currentPage - 1) * pageSize;
 
     const image = req.file; // Change req.files to req.file
 
@@ -1332,7 +1335,11 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "mySubscription") {
         if (type == "allCourses") {
-          const result = await coursesModel.find({});
+          const courseFilter = {
+            ...(searchKeyword && { courseName: { $regex: searchKeyword, $options: "i" } }) // <-- Add regex filter
+          };
+
+          const result = await coursesModel.find(courseFilter).skip(skip).limit(pageSize);
 
           if (!result || result.length === 0) {
             return res.status(400).send({ message: "No course found in the table." });
@@ -1358,7 +1365,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
 
           res.status(200).send({ message: "Courses Details.", result: enhancedCourses });
         } else if (type == "myList") {
-          const result = await enrollmentModel.find({ userId: existingUser._id });
+          const result = await enrollmentModel.find({ userId: existingUser._id }).skip(skip).limit(pageSize);
 
           if (!result || result.length === 0) {
             return res.status(400).send({ message: "No course found in the table." });
@@ -1382,7 +1389,13 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
             };
           }));
 
-          res.status(200).send({ message: "My Courses Details.", result: enhancedCourses });
+          // Filter by courseName using searchKeyword (case-insensitive)
+          const filteredCourses = searchKeyword
+            ? enhancedCourses.filter(course =>
+              course.courseName?.toLowerCase().includes(searchKeyword.toLowerCase()))
+            : enhancedCourses;
+
+          res.status(200).send({ message: "My Courses Details.", result: filteredCourses });
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "notification") {
 
