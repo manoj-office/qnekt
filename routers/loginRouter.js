@@ -593,8 +593,10 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
 router.post("/userslist", adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action } = req.body;
+    const { action, searchKeyword, currentPage, pageSize } = req.body;
     req.body.userId = id;
+
+    const skip = (currentPage - 1) * pageSize;
 
     const totalCount = {
       studentList: await BuddysModel.countDocuments({ status: "Active" }),
@@ -602,18 +604,22 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
       pendingList: await BuddysModel.countDocuments({ status: "Pending" }),
     };
 
+    const filter = searchKeyword
+    ? { userName: { $regex: searchKeyword, $options: "i" } }
+    : {};
+
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "studentList") {
-        const result = await BuddysModel.find({ status: "Active", role: { $ne: "admin" } }).lean();
+        const result = await BuddysModel.find({ status: "Active", role: { $ne: "admin" }, ...filter }).lean().skip(skip).limit(pageSize);
 
         res.status(200).json({ message: "student List", totalCount, result: result });
       } else if (action == "deletedList") {
-        const result = await BuddysModel.find({ status: "Inactive", role: { $ne: "admin" } }).lean();
+        const result = await BuddysModel.find({ status: "Inactive", role: { $ne: "admin" }, ...filter }).lean().skip(skip).limit(pageSize);
 
         res.status(200).json({ message: "deleted List", totalCount, result: result });
       } else if (action == "pendingList") {
-        const result = await BuddysModel.find({ status: "Pending", role: { $ne: "admin" } }).lean();
+        const result = await BuddysModel.find({ status: "Pending", role: { $ne: "admin" }, ...filter }).lean().skip(skip).limit(pageSize);
 
         res.status(200).json({ message: "pending List", totalCount, result: result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
@@ -1317,21 +1323,56 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
         res.status(200).send({ message: "myCourse Details.", result });
       } else if (action == "library") {
         if (type == "library") {
-          const result = await libraryModel.find({ userId: existingUser._id });
+          // Step 1: Get enrollments for the user
+          const enrollments = await enrollmentModel.find({ userId: existingUser._id });
 
-          res.status(200).send({ message: "My library Details.", result });
+          if (!enrollments || enrollments.length === 0) return res.status(400).send({ message: "User is not enrolled in any course." });
+
+          // Step 2: Extract courseIds from enrollments
+          const enrolledCourseIds = enrollments.map(enroll => enroll.courseId);
+
+          // Step 3: Fetch matching library records
+          const result = await libraryModel.find({ courseId: { $in: enrolledCourseIds } }).skip(skip).limit(pageSize);
+          if (!result) return res.status(400).send({ message: "no files found in the table." });
+
+          // Step 4: Combine all library arrays
+          const combinedLibraryItems = result.flatMap(doc => doc.library);
+
+          res.status(200).send({ message: "My library Details.", result: combinedLibraryItems });
         } else if (type == "video") {
-          const result = await videoModel.find({ userId: existingUser._id });
+          // Step 1: Get enrollments for the user
+          const enrollments = await enrollmentModel.find({ userId: existingUser._id });
 
+          if (!enrollments || enrollments.length === 0) return res.status(400).send({ message: "User is not enrolled in any course." });
+
+          // Step 2: Extract courseIds from enrollments
+          const enrolledCourseIds = enrollments.map(enroll => enroll.courseId);
+
+          // Step 3: Fetch matching video records
+          const result = await videoModel.find({ courseId: { $in: enrolledCourseIds } }).skip(skip).limit(pageSize);
           if (!result) return res.status(400).send({ message: "no video found in the table." });
 
-          res.status(200).send({ message: "My video Details.", result });
-        } else if (type == "image") {
-          const result = await imageModel.find({ userId: existingUser._id });
+          // Step 4: Combine all video arrays
+          const combinedVideoItems = result.flatMap(doc => doc.video);
 
+          res.status(200).send({ message: "My video Details.", result: combinedVideoItems });
+        } else if (type == "image") {
+          // Step 1: Get enrollments for the user
+          const enrollments = await enrollmentModel.find({ userId: existingUser._id });
+
+          if (!enrollments || enrollments.length === 0) return res.status(400).send({ message: "User is not enrolled in any course." });
+
+          // Step 2: Extract courseIds from enrollments
+          const enrolledCourseIds = enrollments.map(enroll => enroll.courseId);
+
+          // Step 3: Fetch matching image records
+          const result = await imageModel.find({ courseId: { $in: enrolledCourseIds } }).skip(skip).limit(pageSize);
           if (!result) return res.status(400).send({ message: "no image found in the table." });
 
-          res.status(200).send({ message: "My image Details.", result });
+          // Step 4: Combine all image arrays
+          const combinedImageItems = result.flatMap(doc => doc.image);
+
+          res.status(200).send({ message: "My image Details.", result: combinedImageItems });
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "mySubscription") {
         if (type == "allCourses") {
