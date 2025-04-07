@@ -660,7 +660,7 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
 //-------------------------------------------------------------------------------------------------
 //video management
 //video CRUD
-router.post("/adminVideo", upload.array("video", 5), adminTokenValidation, async (req, res) => {
+router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
@@ -798,11 +798,12 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
 
 //gallery management
 //image CRUD
-router.post("/adminImage", upload.array("image", 5), adminTokenValidation, async (req, res) => {
+router.post("/adminImage", upload.array("image", 10), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
+    
     const images = req.files.map(file => file.path); // Store paths instead of whole file objects
 
 
@@ -936,10 +937,10 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 
 //libaray management
 //library 
-router.post("/library", upload.array("library", 5), adminTokenValidation, async (req, res) => {
+router.post("/library", upload.array("library", 10), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, subjectId, courseId, ID } = req.body;
+    const { action, categoryId, courseId, name, description, ID } = req.body;
     req.body.userId = id;
 
     const libraries = req.files.map(file => file.path); // Store paths instead of whole file objects
@@ -953,7 +954,7 @@ router.post("/library", upload.array("library", 5), adminTokenValidation, async 
       if (action == "create") {
         const result = new libraryModel({
           userId: id,
-          categoryId: subjectId,
+          categoryId,
           courseId,
           library: libraries,
           name,
