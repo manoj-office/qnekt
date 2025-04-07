@@ -1336,7 +1336,8 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
       } else if (action == "mySubscription") {
         if (type == "allCourses") {
           const courseFilter = {
-            ...(searchKeyword && { courseName: { $regex: searchKeyword, $options: "i" } }) // <-- Add regex filter
+            ...(searchKeyword && { courseName: { $regex: searchKeyword, $options: "i" } }), // <-- Add regex filter
+            status: "Active"
           };
 
           const result = await coursesModel.find(courseFilter).skip(skip).limit(pageSize);
@@ -1365,29 +1366,21 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
 
           res.status(200).send({ message: "Courses Details.", result: enhancedCourses });
         } else if (type == "myList") {
-          const result = await enrollmentModel.find({ userId: existingUser._id }).skip(skip).limit(pageSize);
+          const result = await enrollmentModel.find({ userId: existingUser._id, status: "Active" }).skip(skip).limit(pageSize);
 
           if (!result || result.length === 0) {
             return res.status(400).send({ message: "No course found in the table." });
           }
 
           const enhancedCourses = await Promise.all(result.map(async (course) => {
-            const courseObj = course.toObject();
+              const courses = await coursesModel.findById(course.courseId);
+              const category = await categoryModel.findById(courses.subjectId);
 
-            if (!course.subjectId) {
-              // Skip category lookup if subjectId is missing
               return {
-                ...courseObj,
-                subjectName: "",
+                ...courses._doc,
+                subjectName: category ? category.name : "",
               };
-            }
-
-            const category = await categoryModel.findById(course.subjectId).select("name");
-            return {
-              ...courseObj,
-              subjectName: category?.name || "",
-            };
-          }));
+            }));
 
           // Filter by courseName using searchKeyword (case-insensitive)
           const filteredCourses = searchKeyword
