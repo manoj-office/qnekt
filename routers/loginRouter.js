@@ -1333,15 +1333,39 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
         if (type == "allCourses") {
           const result = await coursesModel.find({});
 
-          if (!result) return res.status(400).send({ message: "no course found in the table." });
+          if (!result || result.length === 0) {
+            return res.status(400).send({ message: "No course found in the table." });
+          }
 
-          res.status(200).send({ message: "Courses Details.", result });
+          // Assuming you have a categoryModel to fetch subject names
+          const enhancedResult = await Promise.all(result.map(async (course) => {
+            const category = await categoryModel.findOne({ _id: course.categoryId }).select('subjectName');
+
+            return {
+              ...course._doc, // Convert Mongoose document to plain object
+              subjectName: category ? category.subjectName : "",
+            };
+          }));
+
+          res.status(200).send({ message: "Courses Details.", result: enhancedResult });
         } else if (type == "myList") {
           const result = await enrollmentModel.find({ userId: existingUser._id });
 
-          if (!result) return res.status(400).send({ message: "no course found in the table." });
+          if (!result || result.length === 0) {
+            return res.status(400).send({ message: "No course found in the table." });
+          }
 
-          res.status(200).send({ message: "My Courses Details.", result });
+          // Assuming you have a categoryModel to fetch subject names
+          const enhancedResult = await Promise.all(result.map(async (course) => {
+            const category = await categoryModel.findOne({ _id: course.categoryId }).select('subjectName');
+
+            return {
+              ...course._doc, // Convert Mongoose document to plain object
+              subjectName: category ? category.subjectName : "",
+            };
+          }));
+
+          res.status(200).send({ message: "My Courses Details.", result: enhancedResult });
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "notification") {
 

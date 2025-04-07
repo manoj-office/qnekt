@@ -180,14 +180,14 @@ const cartSchema = new mongoose.Schema(
 
 const siteSettingsSchema = new mongoose.Schema(
     {
-        companyName: { type: String },
-        emailId: { type: String },
-        contact1: { type: String },
-        contact2: { type: String },
-        address: { type: String },
-        faviconLogo: { type: String },
-        companyLogo: { type: String },
-        waterMarkLogo: { type: String },
+        companyName: { type: String, default: "" },
+        emailId: { type: String, default: "" },
+        contact1: { type: String, default: "" },
+        contact2: { type: String, default: "" },
+        address: { type: String, default: "" },
+        faviconLogo: { type: String, default: "" },
+        companyLogo: { type: String, default: "" },
+        waterMarkLogo: { type: String, default: "" },
         mobileAuth: { type: Boolean, default: false  },
         googleAuth: { type: Boolean, default: false  },
         emailAuth: { type: Boolean, default: false },
