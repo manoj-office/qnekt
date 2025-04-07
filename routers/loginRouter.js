@@ -1266,7 +1266,7 @@ router.post("/status", adminTokenValidation, async (req, res) => {
 router.post("/profile", upload.single("image"), tokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, type, firstName, lastName, emailId, mobNo, city, country } = req.body; // Extract action and status
+    const { action, type, firstName, lastName, emailId, mobNo, city, country, password } = req.body; // Extract action and status
     req.body.userId = id;
 
     const image = req.file; // Change req.files to req.file
@@ -1292,6 +1292,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
               mobNo,
               image: image ? image.path : "", // Store path (or buffer)
               city,
+              password: await hashPassword(password),
               country
             },
             { new: true }
@@ -1337,17 +1338,25 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
             return res.status(400).send({ message: "No course found in the table." });
           }
 
-          // Assuming you have a categoryModel to fetch subject names
-          const enhancedResult = await Promise.all(result.map(async (course) => {
-            const category = await categoryModel.findOne({ _id: course.categoryId }).select('subjectName');
+          const enhancedCourses = await Promise.all(result.map(async (course) => {
+            const courseObj = course.toObject();
 
+            if (!course.subjectId) {
+              // Skip category lookup if subjectId is missing
+              return {
+                ...courseObj,
+                subjectName: "",
+              };
+            }
+
+            const category = await categoryModel.findById(course.subjectId).select("name");
             return {
-              ...course._doc, // Convert Mongoose document to plain object
-              subjectName: category ? category.subjectName : "",
+              ...courseObj,
+              subjectName: category?.name || "",
             };
           }));
 
-          res.status(200).send({ message: "Courses Details.", result: enhancedResult });
+          res.status(200).send({ message: "Courses Details.", result: enhancedCourses });
         } else if (type == "myList") {
           const result = await enrollmentModel.find({ userId: existingUser._id });
 
@@ -1355,17 +1364,25 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
             return res.status(400).send({ message: "No course found in the table." });
           }
 
-          // Assuming you have a categoryModel to fetch subject names
-          const enhancedResult = await Promise.all(result.map(async (course) => {
-            const category = await categoryModel.findOne({ _id: course.categoryId }).select('subjectName');
+          const enhancedCourses = await Promise.all(result.map(async (course) => {
+            const courseObj = course.toObject();
 
+            if (!course.subjectId) {
+              // Skip category lookup if subjectId is missing
+              return {
+                ...courseObj,
+                subjectName: "",
+              };
+            }
+
+            const category = await categoryModel.findById(course.subjectId).select("name");
             return {
-              ...course._doc, // Convert Mongoose document to plain object
-              subjectName: category ? category.subjectName : "",
+              ...courseObj,
+              subjectName: category?.name || "",
             };
           }));
 
-          res.status(200).send({ message: "My Courses Details.", result: enhancedResult });
+          res.status(200).send({ message: "My Courses Details.", result: enhancedCourses });
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "notification") {
 
