@@ -1222,9 +1222,16 @@ router.post("/listCourses", async (req, res) => {
 
       const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
 
-      if (!result) return res.status(400).send({ message: "no course found for the subject." });
+      if (!result || result.length === 0) {
+        return res.status(400).send({ message: "No course found for this subject." });
+      }
+      // Add subjectName from category to each course
+      const enrichedResult = result.map(course => ({
+        ...course.toObject(),
+        subjectName: existingCategory.name
+      }));
 
-      res.status(200).json({ message: "Course Details List.", result });
+      res.status(200).json({ message: "Course Details List.", result: enrichedResult });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
