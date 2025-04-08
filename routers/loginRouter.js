@@ -671,8 +671,8 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
-    const videos = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
 
+    const videos = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
 
     if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
       return res.status(400).send({ message: "Invalid ID." });
@@ -756,43 +756,63 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
-        const result = await categoryModel.aggregate([
-          {
-            $lookup: {
-              from: "courses", // Ensure this matches your actual collection name
-              localField: "_id",
-              foreignField: "subjectId",
-              as: "courseInfo"
-            }
-          },
-          {
-            $match: {
-              name: { $regex: searchKeyword, $options: 'i' }
-            }
-          },
-          {
-            $unwind: {
-              path: "$courseInfo",
-              preserveNullAndEmptyArrays: true // Keeps categories without courses
-            }
-          },
-          {
-            $project: {
-              name: 1,
-              description: 1,
-              courseName: "$courseInfo.courseName" // Extract course name
-            }
-          },
-          {
-            $skip: skip
-          },
-          {
-            $limit: pageSize
-          }
-        ]);
+        // Step 1: Get all video records
+        const videos = await videoModel.find({}).select("courseId video");
+        if (!videos || videos.length === 0) return res.status(404).send({ message: "No videos found." });
 
+        // Step 2: Extract and validate unique courseIds from videos
+        const courseIdSet = new Set(videos.map(video => video.courseId)
+          .filter(courseId => courseId && mongoose.Types.ObjectId.isValid(courseId))
+        );
 
-        res.status(200).send({ message: "category Name.", result });
+        const uniqueCourseIds = Array.from(courseIdSet);
+        if (uniqueCourseIds.length === 0) return res.status(404).send({ message: "No valid course IDs found in videos." });
+
+        // Step 3: Fetch course details with pagination
+        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
+        if (!courseDetails || courseDetails.length === 0) return res.status(404).send({ message: "No course details found." });
+
+        // Step 4: Group videos by courseId
+        const videosGroupedByCourse = {};
+        for (const video of videos) {
+          const courseId = String(video.courseId);
+          if (!videosGroupedByCourse[courseId]) videosGroupedByCourse[courseId] = [];
+          videosGroupedByCourse[courseId].push(video);
+        }
+
+        // Step 5: Fetch subject names from categoryModel
+        const subjectIds = courseDetails.map(course => course.subjectId).filter(Boolean);
+        const subjects = await categoryModel.find({ _id: { $in: subjectIds } }).lean();
+
+        const subjectMap = {};
+        for (const subject of subjects) {
+          subjectMap[String(subject._id)] = subject.name;
+        }
+
+        // Step 6: Combine all data
+        const coursesWithVideos = courseDetails.map(course => {
+          const courseId = String(course._id);
+          const subjectId = String(course.subjectId);
+          const videoDocs = videosGroupedByCourse[courseId] || [];
+
+          // Add video URL + type
+          const videoUrls = videoDocs.flatMap(video => (video.video || []).map(videoPath => {
+            const ext = videoPath.split('.').pop().split('?')[0].toLowerCase();
+            return {
+              url: videoPath,
+              type: ext
+            };
+          }));
+
+          return {
+            ...course,
+            subject: subjectMap[subjectId] || null,
+            videos: videoUrls
+          };
+        });
+
+        // Step 7: Send response
+        res.status(200).send({ message: "Courses and their videos fetched successfully.", result: coursesWithVideos });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -892,47 +912,66 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 
     const skip = (currentPage - 1) * pageSize;
 
-
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "readAll") {
-        const result = await categoryModel.aggregate([
-          {
-            $lookup: {
-              from: "courses", // Ensure this matches your actual collection name
-              localField: "_id",
-              foreignField: "subjectId",
-              as: "courseInfo"
-            }
-          },
-          {
-            $match: {
-              name: { $regex: searchKeyword, $options: 'i' }
-            }
-          },
-          {
-            $unwind: {
-              path: "$courseInfo",
-              preserveNullAndEmptyArrays: true // Keeps categories without courses
-            }
-          },
-          {
-            $project: {
-              name: 1,
-              description: 1,
-              courseName: "$courseInfo.courseName" // Extract course name
-            }
-          },
-          {
-            $skip: skip
-          },
-          {
-            $limit: pageSize
-          }
-        ]);
+        // Step 1: Get all image records
+        const images = await imageModel.find({}).select("courseId image");
+        if (!images || images.length === 0) return res.status(404).send({ message: "No images found." });
 
+        // Step 2: Extract and validate unique courseIds from images
+        const courseIdSet = new Set(images.map(img => img.courseId)
+          .filter(courseId => courseId && mongoose.Types.ObjectId.isValid(courseId))
+        );
 
-        res.status(200).send({ message: "category Name.", result });
+        const uniqueCourseIds = Array.from(courseIdSet);
+        if (uniqueCourseIds.length === 0) return res.status(404).send({ message: "No valid course IDs found in images." });
+
+        // Step 3: Fetch course details with pagination
+        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
+        if (!courseDetails || courseDetails.length === 0) return res.status(404).send({ message: "No course details found." });
+
+        // Step 4: Group images by courseId
+        const imagesGroupedByCourse = {};
+        for (const image of images) {
+          const courseId = String(image.courseId);
+          if (!imagesGroupedByCourse[courseId]) imagesGroupedByCourse[courseId] = [];
+          imagesGroupedByCourse[courseId].push(image);
+        }
+
+        // Step 5: Fetch subject names from categoryModel
+        const subjectIds = courseDetails.map(course => course.subjectId).filter(Boolean);
+        const subjects = await categoryModel.find({ _id: { $in: subjectIds } }).lean();
+
+        const subjectMap = {};
+        for (const subject of subjects) {
+          subjectMap[String(subject._id)] = subject.name;
+        }
+
+        // Step 6: Combine all data
+        const coursesWithImages = courseDetails.map(course => {
+          const courseId = String(course._id);
+          const subjectId = String(course.subjectId);
+          const imageDocs = imagesGroupedByCourse[courseId] || [];
+
+          // Add image URL + type
+          const imageUrls = imageDocs.flatMap(img => (img.image || []).map(imgPath => {
+            const ext = imgPath.split('.').pop().split('?')[0].toLowerCase();
+            return {
+              url: imgPath,
+              type: ext
+            };
+          }));
+
+          return {
+            ...course,
+            subject: subjectMap[subjectId] || null,
+            images: imageUrls
+          };
+        });
+
+        // Step 7: Send response
+        res.status(200).send({ message: "Courses and their images fetched successfully.", result: coursesWithImages });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -1016,6 +1055,83 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
+    res.status(500).send({ message: "Internal Server Error", error });
+  }
+});
+
+
+//library list admin
+router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, searchKeyword, currentPage, pageSize } = req.body;
+    req.body.userId = id;
+
+    const skip = (currentPage - 1) * pageSize;
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (!user) return res.status(400).send({ message: "User does not exist." });
+
+    if (action !== "readAll") return res.status(400).send({ message: "Action does not exist." });
+
+    // Step 1: Get all library records
+    const libraries = await libraryModel.find({}).select("courseId library");
+    if (!libraries.length) return res.status(404).send({ message: "No libraries found." });
+
+    // Step 2: Extract and validate unique courseIds from libraries
+    const courseIdSet = new Set(
+      libraries.map(lib => lib.courseId).filter(courseId => courseId && mongoose.Types.ObjectId.isValid(courseId))
+    );
+    const uniqueCourseIds = Array.from(courseIdSet);
+    if (!uniqueCourseIds.length) return res.status(404).send({ message: "No valid course IDs found in libraries." });
+
+    // Step 3: Fetch course details with pagination
+    const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
+    if (!courseDetails.length) return res.status(404).send({ message: "No course details found." });
+
+    // Step 4: Group libraries by courseId
+    const librariesGroupedByCourse = {};
+    for (const lib of libraries) {
+      const courseId = String(lib.courseId);
+      if (!librariesGroupedByCourse[courseId]) librariesGroupedByCourse[courseId] = [];
+      librariesGroupedByCourse[courseId].push(lib);
+    }
+
+    // Step 5: Fetch subject names from categoryModel
+    const subjectIds = courseDetails.map(course => course.subjectId).filter(Boolean);
+    const subjects = await categoryModel.find({ _id: { $in: subjectIds } }).lean();
+
+    const subjectMap = {};
+    for (const subject of subjects) {
+      subjectMap[String(subject._id)] = subject.name;
+    }
+
+    // Step 6: Combine all data
+    const coursesWithLibraries = courseDetails.map(course => {
+      const courseId = String(course._id);
+      const subjectId = String(course.subjectId);
+      const libraryDocs = librariesGroupedByCourse[courseId] || [];
+
+      const libraryUrls = libraryDocs.flatMap(lib => (lib.library || []).map(libPath => {
+        const ext = libPath.split('.').pop().split('?')[0].toLowerCase();
+        return { url: libPath, type: ext };
+      }));
+
+      return {
+        ...course,
+        subject: subjectMap[subjectId] || null,
+        libraries: libraryUrls
+      };
+    });
+
+    // Step 7: Send response
+    res.status(200).send({
+      message: "Courses and their libraries fetched successfully.",
+      result: coursesWithLibraries
+    });
+
+  } catch (error) {
+    console.error("Error in /adminLibraryList:", error);
     res.status(500).send({ message: "Internal Server Error", error });
   }
 });
