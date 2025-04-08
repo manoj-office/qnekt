@@ -17,8 +17,21 @@ if (!fs.existsSync("uploads")) {
   fs.mkdirSync("uploads");
 }
 
-// Define allowed file types
-const allowedFileTypes = /mp3|pdf|doc|docx|mp4|jpeg|jpg|png|webp|svg/;
+// Allowed file extensions
+const allowedFileExtensions = /mp3|pdf|doc|docx|mp4|jpeg|jpg|png|webp|svg/;
+
+// Allowed MIME types
+const allowedMimeTypes = [
+  'audio/mpeg',      // .mp3
+  'application/pdf', // .pdf
+  'application/msword', // .doc
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
+  'video/mp4',       // .mp4
+  'image/jpeg',      // .jpeg, .jpg
+  'image/png',       // .png
+  'image/webp',      // .webp
+  'image/svg+xml'    // .svg
+];
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -31,16 +44,17 @@ const storage = multer.diskStorage({
 
 // File filter function
 const fileFilter = (req, file, cb) => {
-  const extname = allowedFileTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedFileTypes.test(file.mimetype);
+  const extname = allowedFileExtensions.test(path.extname(file.originalname).toLowerCase());
+  const mimetype = allowedMimeTypes.includes(file.mimetype);
 
   if (extname && mimetype) {
     return cb(null, true);
   } else {
-    return cb(new Error("Only MP3, PDF, DOC, DOCX, MP4, JPEG, PNG, WebP, and SVG files are allowed!"), false);
+    return cb(new Error("File type not allowed"), false);
   }
 };
 
+// Final multer upload setup
 const upload = multer({
   storage: storage,
   fileFilter: fileFilter
