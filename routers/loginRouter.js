@@ -321,7 +321,7 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
 router.post("/subject", upload.single("icons"), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, name, description, price, ID } = req.body;
+    const { action, name, description, price, isFeature, ID } = req.body;
     req.body.userId = id;
 
     const icons = req.file; // Change req.files to req.file
@@ -343,6 +343,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
           icons,
           icons: icons ? icons.path : "", // Store path (or buffer)
           price,
+          isFeature,
         });
 
         await result.save();
@@ -367,7 +368,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
         if (description) query.description = description;
         if (icons) query.icons = icons;
         if (price) query.price = price;
-
+        if (isFeature) query.isFeature = isFeature;
 
         const result = await categoryModel.findOneAndUpdate(
           { _id: ID },
@@ -1265,10 +1266,16 @@ router.post("/courseRead", userValidation, async (req, res) => {
     const id = req.userId;
     const { action, ID } = req.body; // Extract action and status
     req.body.userId = id;
+
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
+
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
-
       if (action == "read") {
+        if (!ID) return res.status(400).json({ message: "ID is required" });
+
         const result = await coursesModel.find({ _id: ID });
 
         const checkCourse = await enrollmentModel.findOne({ courseId: result._id });
