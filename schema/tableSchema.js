@@ -34,6 +34,7 @@ const coursesSchema = new mongoose.Schema(
         certificationOfCompletion: { type: Boolean },
         moreInformation: { type: String },
         courseType: { type: Boolean },
+        image: { type: String },
         created_at: { type: Date },
         lastActive: { type: Date },
 

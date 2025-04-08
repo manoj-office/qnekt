@@ -399,11 +399,13 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
 //-------------------------------------------------------------------------------------------------
 // courses
 //CRUD operations in single API
-router.post("/courses", adminTokenValidation, async (req, res) => {
+router.post("/courses", upload.single("image"), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
     const { action, subjectId, courseName, description, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, ID } = req.body;
     req.body.userId = id;
+
+    const image = req.file; // Change req.files to req.file
 
     if (subjectId && !mongoose.Types.ObjectId.isValid(subjectId)) {
       return res.status(400).send({ message: "Invalid subjectId." });
@@ -425,6 +427,7 @@ router.post("/courses", adminTokenValidation, async (req, res) => {
           courseTime,
           certificationOfCompletion,
           moreInformation,
+          image: image ? image.path : "", // Store path (or buffer)
           courseType
         });
 
