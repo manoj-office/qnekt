@@ -605,8 +605,8 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
     };
 
     const filter = searchKeyword
-    ? { userName: { $regex: searchKeyword, $options: "i" } }
-    : {};
+      ? { userName: { $regex: searchKeyword, $options: "i" } }
+      : {};
 
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
@@ -794,16 +794,21 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
           const courseId = String(course._id);
           const subjectId = String(course.subjectId);
           const videoDocs = videosGroupedByCourse[courseId] || [];
-
-          // Add video URL + type
-          const videoUrls = videoDocs.flatMap(video => (video.video || []).map(videoPath => {
-            const ext = videoPath.split('.').pop().split('?')[0].toLowerCase();
-            return {
-              url: videoPath,
-              type: ext
-            };
-          }));
-
+        
+          // Add video URL + type + filename + size
+          const videoUrls = videoDocs.flatMap(video =>
+            (video.video || []).map(videoPath => {
+              const ext = videoPath.split('.').pop().split('?')[0].toLowerCase();
+              
+              return {
+                url: videoPath,
+                type: ext,
+                filename: video.filename || videoPath.split('/').pop(), // fallback to last part of URL
+                size: video.size || null // size in bytes or a human-readable format if available
+              };
+            })
+          );
+        
           return {
             ...course,
             subject: subjectMap[subjectId] || null,
@@ -933,10 +938,10 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 
         // Step 4: Group images by courseId
         const imagesGroupedByCourse = {};
-        for (const image of images) {
-          const courseId = String(image.courseId);
+        for (const img of images) {
+          const courseId = String(img.courseId);
           if (!imagesGroupedByCourse[courseId]) imagesGroupedByCourse[courseId] = [];
-          imagesGroupedByCourse[courseId].push(image);
+          imagesGroupedByCourse[courseId].push(img);
         }
 
         // Step 5: Fetch subject names from categoryModel
@@ -954,14 +959,19 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
           const subjectId = String(course.subjectId);
           const imageDocs = imagesGroupedByCourse[courseId] || [];
 
-          // Add image URL + type
-          const imageUrls = imageDocs.flatMap(img => (img.image || []).map(imgPath => {
-            const ext = imgPath.split('.').pop().split('?')[0].toLowerCase();
-            return {
-              url: imgPath,
-              type: ext
-            };
-          }));
+          // Add image URL + type + filename + size
+          const imageUrls = imageDocs.flatMap(img =>
+            (img.image || []).map(imagePath => {
+              const ext = imagePath.split('.').pop().split('?')[0].toLowerCase();
+
+              return {
+                url: imagePath,
+                type: ext,
+                filename: img.filename || imagePath.split('/').pop(), // fallback to last part of URL
+                size: img.size || null // size in bytes or a human-readable format if available
+              };
+            })
+          );
 
           return {
             ...course,
@@ -1070,66 +1080,72 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
     const skip = (currentPage - 1) * pageSize;
 
     const user = await BuddysModel.findOne({ _id: id });
-    if (!user) return res.status(400).send({ message: "User does not exist." });
+    if (user) {
+      if (action == "readAll") {
+        // Step 1: Get all library records
+        const libraries = await libraryModel.find({}).select("courseId library");
+        if (!libraries || libraries.length === 0) return res.status(404).send({ message: "No libraries found." });
 
-    if (action !== "readAll") return res.status(400).send({ message: "Action does not exist." });
+        // Step 2: Extract and validate unique courseIds from libraries
+        const courseIdSet = new Set(libraries.map(lib => lib.courseId)
+          .filter(courseId => courseId && mongoose.Types.ObjectId.isValid(courseId))
+        );
 
-    // Step 1: Get all library records
-    const libraries = await libraryModel.find({}).select("courseId library");
-    if (!libraries.length) return res.status(404).send({ message: "No libraries found." });
+        const uniqueCourseIds = Array.from(courseIdSet);
+        if (uniqueCourseIds.length === 0) return res.status(404).send({ message: "No valid course IDs found in libraries." });
 
-    // Step 2: Extract and validate unique courseIds from libraries
-    const courseIdSet = new Set(
-      libraries.map(lib => lib.courseId).filter(courseId => courseId && mongoose.Types.ObjectId.isValid(courseId))
-    );
-    const uniqueCourseIds = Array.from(courseIdSet);
-    if (!uniqueCourseIds.length) return res.status(404).send({ message: "No valid course IDs found in libraries." });
+        // Step 3: Fetch course details with pagination
+        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
+        if (!courseDetails || courseDetails.length === 0) return res.status(404).send({ message: "No course details found." });
 
-    // Step 3: Fetch course details with pagination
-    const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
-    if (!courseDetails.length) return res.status(404).send({ message: "No course details found." });
+        // Step 4: Group libraries by courseId
+        const librariesGroupedByCourse = {};
+        for (const lib of libraries) {
+          const courseId = String(lib.courseId);
+          if (!librariesGroupedByCourse[courseId]) librariesGroupedByCourse[courseId] = [];
+          librariesGroupedByCourse[courseId].push(lib);
+        }
 
-    // Step 4: Group libraries by courseId
-    const librariesGroupedByCourse = {};
-    for (const lib of libraries) {
-      const courseId = String(lib.courseId);
-      if (!librariesGroupedByCourse[courseId]) librariesGroupedByCourse[courseId] = [];
-      librariesGroupedByCourse[courseId].push(lib);
-    }
+        // Step 5: Fetch subject names from categoryModel
+        const subjectIds = courseDetails.map(course => course.subjectId).filter(Boolean);
+        const subjects = await categoryModel.find({ _id: { $in: subjectIds } }).lean();
 
-    // Step 5: Fetch subject names from categoryModel
-    const subjectIds = courseDetails.map(course => course.subjectId).filter(Boolean);
-    const subjects = await categoryModel.find({ _id: { $in: subjectIds } }).lean();
+        const subjectMap = {};
+        for (const subject of subjects) {
+          subjectMap[String(subject._id)] = subject.name;
+        }
 
-    const subjectMap = {};
-    for (const subject of subjects) {
-      subjectMap[String(subject._id)] = subject.name;
-    }
+        // Step 6: Combine all data
+        const coursesWithLibraries = courseDetails.map(course => {
+          const courseId = String(course._id);
+          const subjectId = String(course.subjectId);
+          const libraryDocs = librariesGroupedByCourse[courseId] || [];
 
-    // Step 6: Combine all data
-    const coursesWithLibraries = courseDetails.map(course => {
-      const courseId = String(course._id);
-      const subjectId = String(course.subjectId);
-      const libraryDocs = librariesGroupedByCourse[courseId] || [];
+          // Add library URL + type + filename + size
+          const libraryUrls = libraryDocs.flatMap(lib =>
+            (lib.library || []).map(libraryPath => {
+              const ext = libraryPath.split('.').pop().split('?')[0].toLowerCase();
 
-      const libraryUrls = libraryDocs.flatMap(lib => (lib.library || []).map(libPath => {
-        const ext = libPath.split('.').pop().split('?')[0].toLowerCase();
-        return { url: libPath, type: ext };
-      }));
+              return {
+                url: libraryPath,
+                type: ext,
+                filename: lib.filename || libraryPath.split('/').pop(), // fallback to last part of URL
+                size: lib.size || null // size in bytes or a human-readable format if available
+              };
+            })
+          );
 
-      return {
-        ...course,
-        subject: subjectMap[subjectId] || null,
-        libraries: libraryUrls
-      };
-    });
+          return {
+            ...course,
+            subject: subjectMap[subjectId] || null,
+            libraries: libraryUrls
+          };
+        });
 
-    // Step 7: Send response
-    res.status(200).send({
-      message: "Courses and their libraries fetched successfully.",
-      result: coursesWithLibraries
-    });
-
+        // Step 7: Send response
+        res.status(200).send({ message: "Courses and their libraries fetched successfully.", result: coursesWithLibraries });
+      } else res.status(400).send({ message: "Action does not exist." });
+    } else res.status(400).send({ message: "User does not exist." });
   } catch (error) {
     console.error("Error in /adminLibraryList:", error);
     res.status(500).send({ message: "Internal Server Error", error });
@@ -1530,14 +1546,14 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
           }
 
           const enhancedCourses = await Promise.all(result.map(async (course) => {
-              const courses = await coursesModel.findById(course.courseId);
-              const category = await categoryModel.findById(courses.subjectId);
+            const courses = await coursesModel.findById(course.courseId);
+            const category = await categoryModel.findById(courses.subjectId);
 
-              return {
-                ...courses._doc,
-                subjectName: category ? category.name : "",
-              };
-            }));
+            return {
+              ...courses._doc,
+              subjectName: category ? category.name : "",
+            };
+          }));
 
           // Filter by courseName using searchKeyword (case-insensitive)
           const filteredCourses = searchKeyword
@@ -1611,7 +1627,7 @@ router.post("/siteSettings", upload.fields([
       } else if (action == "read") {
         // if (!ID) return res.status(400).json({ message: "ID is required" });
         //  _id: ID, status: "Active"
-        const result = await siteSettingsModel.findOne({ });
+        const result = await siteSettingsModel.findOne({});
 
         if (!result) return res.status(400).json({ error: "site Settings not found in table." });
 
@@ -1690,7 +1706,7 @@ router.post("/notification", adminTokenValidation, async (req, res) => {
     const existingUser = await BuddysModel.findOne({ _id: id });
     if (existingUser) {
       if (action === "flash") {
-        const result = await userNotificationDevicesModel.find({ }).select("devices.fcm_token");
+        const result = await userNotificationDevicesModel.find({}).select("devices.fcm_token");
 
         await sendPushNotification(result, title, body);
 
@@ -1717,11 +1733,11 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
       if (action == "create") {
         const newOrder = new orderModel({
           userId: id,
-          courseId : courseId,
+          courseId: courseId,
         });
         const enrollment = new enrollmentModel({
           userId: id,
-          courseId : courseId,
+          courseId: courseId,
         });
 
         await newOrder.save();
