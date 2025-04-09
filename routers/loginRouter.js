@@ -1278,7 +1278,7 @@ router.post("/courseRead", userValidation, async (req, res) => {
 
         const result = await coursesModel.find({ _id: ID });
 
-        const checkCourse = await enrollmentModel.findOne({ courseId: result._id });
+        const checkCourse = await enrollmentModel.findOne({ courseId: result._id, userId: id });
         if (checkCourse) {
           const video = await videoModel.find({ courseId: result._id });
           const image = await imageModel.find({ courseId: result._id });
@@ -1476,14 +1476,72 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "myCourse") {
 
-        const result = {
+        const count = {
           enrolledCourse: await enrollmentModel.countDocuments({ status: "Active", userId: id }),
           inProgressCourse: await lessonsModel.countDocuments({ status: "InProgress", userId: id }),
           completedCourse: await lessonsModel.countDocuments({ status: "Completed", userId: id }),
           failedCourse: await lessonsModel.countDocuments({ status: "deleted", userId: id }),
         };
 
-        res.status(200).send({ message: "myCourse Details.", result });
+        if (type == "enrollment") {
+          const result = await enrollmentModel.find({ userId: id, status: "Active" });
+
+          if (!result || result.length === 0) {
+            return res.status(400).send({ message: "No enrolled courses" });
+          }
+
+          // Extract courseIds and remove duplicates
+          const courseIds = [...new Set(result.map(enrollment => enrollment.courseId.toString()))];
+
+          // Get course details
+          const courseDetails = await coursesModel.find({ _id: { $in: courseIds } });
+
+          return res.status(200).send({ message: "my enrolled course Details", result: { ...count, courseDetails } });
+        } else if (type == "inProgress") {
+          const result = await lessonsModel.find({ userId: id, status: "InProgress" });
+
+          if (!result || result.length === 0) {
+            return res.status(400).send({ message: "No InProgress courses" });
+          }
+
+          // Extract courseIds and remove duplicates
+          const courseIds = [...new Set(result.map(enrollment => enrollment.courseId.toString()))];
+
+          // Get course details
+          const courseDetails = await coursesModel.find({ _id: { $in: courseIds } });
+
+          return res.status(200).send({ message: "my inProgress course Details", result: { ...count, courseDetails } });
+        } else if (type == "completed") {
+          const result = await lessonsModel.find({ userId: id, status: "Completed" });
+
+          if (!result || result.length === 0) {
+            return res.status(400).send({ message: "No completed courses" });
+          }
+
+          // Extract courseIds and remove duplicates
+          const courseIds = [...new Set(result.map(enrollment => enrollment.courseId.toString()))];
+
+          // Get course details
+          const courseDetails = await coursesModel.find({ _id: { $in: courseIds } });
+
+          return res.status(200).send({ message: "my completed course Details", result: { ...count, courseDetails } });
+        } else if (type == "failed") {
+          const result = await enrollmentModel.find({ userId: id, status: "deleted" });
+
+          if (!result || result.length === 0) {
+            return res.status(400).send({ message: "No failed courses" });
+          }
+
+          // Extract courseIds and remove duplicates
+          const courseIds = [...new Set(result.map(enrollment => enrollment.courseId.toString()))];
+
+          // Get course details
+          const courseDetails = await coursesModel.find({ _id: { $in: courseIds } });
+
+          return res.status(200).send({ message: "my failed course Details", result: { ...count, courseDetails } });
+        } 
+
+        res.status(200).send({ message: "myCourse Details.", result: count });
       } else if (action == "library") {
         if (type == "library") {
           // Step 1: Get enrollments for the user
