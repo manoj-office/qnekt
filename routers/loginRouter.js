@@ -1276,7 +1276,7 @@ router.post("/courseRead", userValidation, async (req, res) => {
       if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const result = await coursesModel.find({ _id: ID });
+        const result = await coursesModel.findOne({ _id: ID });
         if (!result) return res.status(400).send({ message: "No course found." });
 
         // Get the subject data
@@ -1285,7 +1285,7 @@ router.post("/courseRead", userValidation, async (req, res) => {
         // Merge subject name into result
         const courseWithSubject = {
           ...result._doc,
-          subjectName: subject ? subject.name : null,
+          subjectName: subject ? subject.name : "",
         };
 
         const checkCourse = await enrollmentModel.findOne({ courseId: result._id, userId: id });
@@ -1293,15 +1293,22 @@ router.post("/courseRead", userValidation, async (req, res) => {
           const video = await videoModel.find({ courseId: result._id }).select("video");
           const image = await imageModel.find({ courseId: result._id }).select("image");
 
-          return res.status(200).json({ message: "Course Details.", result: courseWithSubject, video, image });
+          const flattenedImage = [...new Set(image.flatMap(item => item.image))];
+          const flattenedVideo = [...new Set(video.flatMap(item => item.video))];
+
+          const courseWith = {
+            ...result._doc,
+            subjectName: subject ? subject.name : "",
+            videosList: flattenedImage ? flattenedImage : [],
+            imagesList: flattenedVideo ? flattenedVideo : []
+          };
+
+          return res.status(200).json({ message: "Course Details.", result: courseWith });
         }
 
-        if (!result) return res.status(400).send({ message: "no course found for the subject." });
-
-        res.status(200).json({ message: "Course Details.", result: courseWithSubject });
+        return res.status(200).json({ message: "Course Details.", result: courseWithSubject });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
-
   } catch (error) {
     console.log(error);
     res.status(500).send({ message: "Internal Server Error", error });
