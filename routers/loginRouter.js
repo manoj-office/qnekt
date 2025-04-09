@@ -1280,7 +1280,7 @@ router.post("/courseRead", userValidation, async (req, res) => {
         if (!result) return res.status(400).send({ message: "No course found." });
 
         // Get the subject data
-        const subject = await subjectModel.findOne({ _id: result.subjectId });
+        const subject = await categoryModel.findOne({ _id: result.subjectId });
 
         // Merge subject name into result
         const courseWithSubject = {
