@@ -812,12 +812,12 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
           const courseId = String(course._id);
           const subjectId = String(course.subjectId);
           const videoDocs = videosGroupedByCourse[courseId] || [];
-        
+
           // Add video URL + type + filename + size
           const videoUrls = videoDocs.flatMap(video =>
             (video.video || []).map(videoPath => {
               const ext = videoPath.split('.').pop().split('?')[0].toLowerCase();
-              
+
               return {
                 url: videoPath,
                 type: ext,
@@ -826,7 +826,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
               };
             })
           );
-        
+
           return {
             ...course,
             subject: subjectMap[subjectId] || null,
@@ -852,7 +852,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
     const id = req.userId;
     const { action, categoryId, courseId, name, description, icons, ID } = req.body;
     req.body.userId = id;
-    
+
     const images = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
 
 
@@ -1277,18 +1277,28 @@ router.post("/courseRead", userValidation, async (req, res) => {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
         const result = await coursesModel.find({ _id: ID });
+        if (!result) return res.status(400).send({ message: "No course found." });
+
+        // Get the subject data
+        const subject = await subjectModel.findOne({ _id: result.subjectId });
+
+        // Merge subject name into result
+        const courseWithSubject = {
+          ...result._doc,
+          subjectName: subject ? subject.name : null,
+        };
 
         const checkCourse = await enrollmentModel.findOne({ courseId: result._id, userId: id });
         if (checkCourse) {
-          const video = await videoModel.find({ courseId: result._id });
-          const image = await imageModel.find({ courseId: result._id });
+          const video = await videoModel.find({ courseId: result._id }).select("video");
+          const image = await imageModel.find({ courseId: result._id }).select("image");
 
-          return res.status(200).json({ message: "Course Details.", result, video, image });
+          return res.status(200).json({ message: "Course Details.", result: courseWithSubject, video, image });
         }
 
         if (!result) return res.status(400).send({ message: "no course found for the subject." });
 
-        res.status(200).json({ message: "Course Details.", result });
+        res.status(200).json({ message: "Course Details.", result: courseWithSubject });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
 
@@ -1454,7 +1464,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
 
           res.status(200).send({ message: "profile Details,", result: existingUser });
         } else if (type == "update") {
-          
+
           const result = await BuddysModel.findOneAndUpdate(
             { _id: existingUser._id },
             {
@@ -1539,7 +1549,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
           const courseDetails = await coursesModel.find({ _id: { $in: courseIds } });
 
           return res.status(200).send({ message: "my failed course Details", result: { ...count, courseDetails } });
-        } 
+        }
 
         res.status(200).send({ message: "myCourse Details.", result: count });
       } else if (action == "library") {
@@ -1658,7 +1668,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
         const clientData = await model.find({ clientId: { $in: id } }).select("title body");
 
         const userDetails = await BuddysModel.findOne({ _id: id });
-        
+
         const result = {
           ...clientData._doc,
           userDetails,
@@ -1734,7 +1744,7 @@ router.post("/siteSettings", upload.fields([
         if (contact1) updatedData.contact1 = contact1;
         if (contact2) updatedData.contact2 = contact2;
         if (address) updatedData.address = address;
-        
+
         if (req.files && req.files["faviconLogo"]) {
           updatedData.faviconLogo = req.files["faviconLogo"] ? req.files["faviconLogo"][0].path : "";
         }
@@ -1817,6 +1827,10 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
 
     if (!action || !courseId) return res.status(400).json({ message: "All  fields are required " });
 
+    if (courseId && !mongoose.Types.ObjectId.isValid(courseId)) {
+      return res.status(400).send({ message: "Invalid courseId." });
+    }
+
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
@@ -1850,5 +1864,50 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 })
+
+//profile
+//couseRead video, image and library
+router.post("/listResource", tokenValidation, async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID } = req.body; // Extract action and status
+    req.body.userId = id;
+
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (!ID) return res.status(400).send({ message: "ID is needed." });
+
+      const result = await coursesModel.findOne({ _id: ID });
+      if (!result) return res.status(400).json({ message: "No course found in the table." });
+
+      if (action == "image") {
+        const image = await imageModel.find({ courseId: result._id });
+        const flattenedImage = [...new Set(image.flatMap(item => item.image))];
+
+        res.status(200).send({ message: "course image List.", result: flattenedImage });
+      } else if (action == "video") {
+        const video = await videoModel.find({ courseId: result._id });
+        const flattenedVideo = [...new Set(video.flatMap(item => item.video))];
+
+        res.status(200).send({ message: "course video List.", result: flattenedVideo });
+      } else if (action == "library") {
+        const library = await libraryModel.find({ courseId: result._id });
+        const flattenedLibrary = [...new Set(library.flatMap(item => item.library))];
+
+        res.status(200).send({ message: "course library List.", result: flattenedLibrary });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exist." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+
+
 
 module.exports = router;
