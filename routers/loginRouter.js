@@ -1563,54 +1563,121 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
         if (type == "library") {
           // Step 1: Get enrollments for the user
           const enrollments = await enrollmentModel.find({ userId: existingUser._id });
-
-          if (!enrollments || enrollments.length === 0) return res.status(400).send({ message: "User is not enrolled in any course." });
+          if (!enrollments || enrollments.length === 0)
+            return res.status(400).send({ message: "User is not enrolled in any course." });
 
           // Step 2: Extract courseIds from enrollments
           const enrolledCourseIds = enrollments.map(enroll => enroll.courseId);
 
-          // Step 3: Fetch matching library records
-          const result = await libraryModel.find({ courseId: { $in: enrolledCourseIds } }).skip(skip).limit(pageSize);
-          if (!result) return res.status(400).send({ message: "no files found in the table." });
+          // Step 3: Fetch course details
+          const courses = await coursesModel.find({ _id: { $in: enrolledCourseIds } });
 
-          // Step 4: Combine all library arrays
-          const combinedLibraryItems = result.flatMap(doc => doc.library);
+          // Step 4: For each course, get category's subjectName and libraries
+          const results = await Promise.all(
+            courses.map(async course => {
+              // Get subjectName from categoryModel
+              const category = await categoryModel.findById(course.subjectId);
+              const subjectName = category?.name || "";
 
-          res.status(200).send({ message: "My library Details.", result: combinedLibraryItems });
+              // Get library data for the course
+              const libraryDocs = await libraryModel.find({ courseId: course._id });
+              // const libraries = libraryDocs.flatMap(doc => doc.library); // assuming `library` is an array in each doc
+
+              const libraries = libraryDocs.flatMap(doc =>
+                (doc.library || []).map(lib => {
+                  const ext = lib.split('.').pop().split('?')[0].toLowerCase();
+
+                  const filePath = lib.path || "";
+                  const filename = path.basename(filePath);
+                  const fileType = path.extname(filePath).replace(".", "").toLowerCase();
+              
+                  return {
+                    url: lib,
+                    type: ext,
+                    filename: lib.filename || lib.split('/').pop(), // fallback to last part of URL
+                    size: lib.size || null // size in bytes or a human-readable format if available
+                  
+                  };
+                })
+              );
+              
+
+              // Return full course details + subjectName + libraries
+              return {
+                ...course._doc,
+                subjectName,
+                libraries,
+              };
+            })
+          );
+
+          res.status(200).send({ message: "My library Details.", result: results });
         } else if (type == "video") {
           // Step 1: Get enrollments for the user
           const enrollments = await enrollmentModel.find({ userId: existingUser._id });
-
-          if (!enrollments || enrollments.length === 0) return res.status(400).send({ message: "User is not enrolled in any course." });
+          if (!enrollments || enrollments.length === 0)
+            return res.status(400).send({ message: "User is not enrolled in any course." });
 
           // Step 2: Extract courseIds from enrollments
           const enrolledCourseIds = enrollments.map(enroll => enroll.courseId);
 
-          // Step 3: Fetch matching video records
-          const result = await videoModel.find({ courseId: { $in: enrolledCourseIds } }).skip(skip).limit(pageSize);
-          if (!result) return res.status(400).send({ message: "no video found in the table." });
+          // Step 3: Fetch course details
+          const courses = await coursesModel.find({ _id: { $in: enrolledCourseIds } });
 
-          // Step 4: Combine all video arrays
-          const combinedVideoItems = result.flatMap(doc => doc.video);
+          // Step 4: For each course, get category's subjectName and videos
+          const results = await Promise.all(
+            courses.map(async course => {
+              // Get subjectName from categoryModel
+              const category = await categoryModel.findById(course.subjectId);
+              const subjectName = category?.name || "";
 
-          res.status(200).send({ message: "My video Details.", result: combinedVideoItems });
+              // Get video data
+              const videoDocs = await videoModel.find({ courseId: course._id });
+              const videos = videoDocs.flatMap(doc => doc.video); // Flatten all videos
+
+              // Return full course details + subjectName + videos
+              return {
+                ...course._doc,
+                subjectName,
+                videos,
+              };
+            })
+          );
+
+          res.status(200).send({ message: "My video Details.", result: results });
         } else if (type == "image") {
           // Step 1: Get enrollments for the user
           const enrollments = await enrollmentModel.find({ userId: existingUser._id });
 
-          if (!enrollments || enrollments.length === 0) return res.status(400).send({ message: "User is not enrolled in any course." });
+          if (!enrollments || enrollments.length === 0)
+            return res.status(400).send({ message: "User is not enrolled in any course." });
 
           // Step 2: Extract courseIds from enrollments
           const enrolledCourseIds = enrollments.map(enroll => enroll.courseId);
 
-          // Step 3: Fetch matching image records
-          const result = await imageModel.find({ courseId: { $in: enrolledCourseIds } }).skip(skip).limit(pageSize);
-          if (!result) return res.status(400).send({ message: "no image found in the table." });
+          // Step 3: Fetch course details
+          const courses = await coursesModel.find({ _id: { $in: enrolledCourseIds } });
 
-          // Step 4: Combine all image arrays
-          const combinedImageItems = result.flatMap(doc => doc.image);
+          // Step 4: For each course, fetch image records and structure the response
+          const results = await Promise.all(
+            courses.map(async (course) => {
+              // Get subjectName from categoryModel
+              const category = await categoryModel.findById(course.subjectId);
+              const subjectName = category?.name || "";
+                            
+              // Get image data
+              const imageDocs = await imageModel.find({ courseId: course._id }).skip(skip).limit(pageSize);
+              const images = imageDocs.flatMap(doc => doc.image); // Combine all image arrays
 
-          res.status(200).send({ message: "My image Details.", result: combinedImageItems });
+              return {
+                ...course._doc,
+                subjectName,
+                images
+              };
+            })
+          );
+
+          res.status(200).send({ message: "My image details.", result: results });
         } else res.status(400).send({ message: "Type Does Not Exist." });
       } else if (action == "mySubscription") {
         if (type == "allCourses") {
