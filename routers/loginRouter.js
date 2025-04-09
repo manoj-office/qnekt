@@ -1863,6 +1863,12 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
         const readdatas = enrollment.toObject();
         readdatas.courseDetails = results;
 
+        const lessons = new lessonsModel({
+          userId: id,
+          courseId: courseId,
+        });
+        await lessons.save();
+        
         res.status(201).json({ message: "Order  & Entrollment Created", Order: readdata, Enrollment: readdatas });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exist." });
