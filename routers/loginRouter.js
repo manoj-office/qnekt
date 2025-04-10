@@ -115,7 +115,7 @@ router.post("/login", async (req, res) => {
 
     if (email !== "") {
       user = await BuddysModel.findOne({
-        $and: [{ emailId: email },],
+        $and: [{ emailId: email, status:"Active" },],
       })
         .sort({ createdAt: -1 })
         .limit(1);
@@ -124,7 +124,7 @@ router.post("/login", async (req, res) => {
 
     } else if (mobNo !== "") {
       user = await BuddysModel.findOne({
-        $and: [{ mobNo: mobNo }],
+        $and: [{ mobNo: mobNo, status:"Active" }],
       })
         .sort({ createdAt: -1 })
         .limit(1);
@@ -1190,7 +1190,7 @@ router.post("/subjectList", async (req, res) => {
         ? { name: { $regex: searchKeyword, $options: "i" } }
         : {}; // If no keyword, fetch all
 
-      const existingCategory = await categoryModel.find(filter).skip(skip).limit(pageSize);
+      const existingCategory = await categoryModel.find({ status: "Active", ...filter}).skip(skip).limit(pageSize);
       if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
       res.status(200).send({ message: "Subject's List.", result: existingCategory });
@@ -1218,10 +1218,10 @@ router.post("/listCourses", async (req, res) => {
         ? { courseName: { $regex: searchKeyword, $options: "i" } }
         : {};
 
-      const existingCategory = await categoryModel.findOne({ _id: ID });
+      const existingCategory = await categoryModel.findOne({ _id: ID, status: "Active" });
       if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
-      const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
+      const result = await coursesModel.find({ subjectId: ID, status: "Active", ...filter }).skip(skip).limit(pageSize);
 
       if (!result || result.length === 0) {
         return res.status(400).send({ message: "No course found for this subject." });
@@ -1276,11 +1276,11 @@ router.post("/courseRead", userValidation, async (req, res) => {
       if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const result = await coursesModel.findOne({ _id: ID });
+        const result = await coursesModel.findOne({ _id: ID,  status: "Active", });
         if (!result) return res.status(400).send({ message: "No course found." });
 
         // Get the subject data
-        const subject = await categoryModel.findOne({ _id: result.subjectId });
+        const subject = await categoryModel.findOne({ _id: result.subjectId, status: "Active", });
 
         // Merge subject name into result
         const courseWithSubject = {
@@ -1290,8 +1290,8 @@ router.post("/courseRead", userValidation, async (req, res) => {
 
         const checkCourse = await enrollmentModel.findOne({ courseId: result._id, userId: id });
         if (checkCourse) {
-          const video = await videoModel.find({ courseId: result._id }).select("video");
-          const image = await imageModel.find({ courseId: result._id }).select("image");
+          const video = await videoModel.find({ courseId: result._id, status: "Active" }).select("video");
+          const image = await imageModel.find({ courseId: result._id, status: "Active" }).select("image");
 
           const flattenedImage = [...new Set(image.flatMap(item => item.image))];
           const flattenedVideo = [...new Set(video.flatMap(item => item.video))];
@@ -1322,7 +1322,7 @@ router.post("/cart", tokenValidation, async (req, res) => {
     const { action, courseId, ID } = req.body; // Extract action and status
     req.body.userId = id;
 
-    const user = await BuddysModel.findOne({ _id: id });
+    const user = await BuddysModel.findOne({ _id: id, status: "Active", });
     if (user) {
       if (action === "create") {
         const cardList = await cartModel.findOne({ userId: id });
@@ -1464,7 +1464,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
     //   return res.status(400).send({ message: "Invalid ID." });
     // }
 
-    const existingUser = await BuddysModel.findOne({ _id: id });
+    const existingUser = await BuddysModel.findOne({ _id: id, status: "Active", });
     if (existingUser) {
       if (action == "myprofile") {
         if (type == "read") {
@@ -1473,7 +1473,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
         } else if (type == "update") {
 
           const result = await BuddysModel.findOneAndUpdate(
-            { _id: existingUser._id },
+            { _id: existingUser._id, status: "Active", },
             {
               firstName,
               lastName,
@@ -1587,10 +1587,6 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
                 (doc.library || []).map(lib => {
                   const ext = lib.split('.').pop().split('?')[0].toLowerCase();
 
-                  const filePath = lib.path || "";
-                  const filename = path.basename(filePath);
-                  const fileType = path.extname(filePath).replace(".", "").toLowerCase();
-              
                   return {
                     url: lib,
                     type: ext,
@@ -1899,13 +1895,13 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
     const { action, courseId } = req.body; // Extract action and status
     req.body.userId = id;
 
-    if (!action || !courseId) return res.status(400).json({ message: "All  fields are required " });
+    // if (!action || !courseId) return res.status(400).json({ message: "All  fields are required " });
 
     if (courseId && !mongoose.Types.ObjectId.isValid(courseId)) {
       return res.status(400).send({ message: "Invalid courseId." });
     }
 
-    const user = await BuddysModel.findOne({ _id: id });
+    const user = await BuddysModel.findOne({ _id: id, status: "Active", });
     if (user) {
       if (action == "create") {
         const newOrder = new orderModel({
@@ -1957,7 +1953,7 @@ router.post("/listResource", tokenValidation, async (req, res) => {
       return res.status(400).send({ message: "Invalid ID." });
     }
 
-    const user = await BuddysModel.findOne({ _id: id });
+    const user = await BuddysModel.findOne({ _id: id, status: "Active", });
     if (user) {
       if (!ID) return res.status(400).send({ message: "ID is needed." });
 
