@@ -1271,8 +1271,8 @@ router.post("/courseRead", userValidation, async (req, res) => {
       return res.status(400).send({ message: "Invalid ID." });
     }
 
-    const user = await BuddysModel.findOne({ _id: id });
-    if (user) {
+    // const user = await BuddysModel.findOne({ _id: id });
+    // if (user) {
       if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -1308,7 +1308,7 @@ router.post("/courseRead", userValidation, async (req, res) => {
 
         return res.status(200).json({ message: "Course Details.", result: courseWithSubject });
       } else res.status(400).send({ message: "Action Does Not Exist." });
-    } else res.status(400).send({ message: "User Does Not Exists." });
+    // } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
     res.status(500).send({ message: "Internal Server Error", error });
