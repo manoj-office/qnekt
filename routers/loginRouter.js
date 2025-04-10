@@ -663,7 +663,7 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
     if (user) {
       if (action == "readAll") {
         const Count = {
-          totalUsers: await BuddysModel.countDocuments({}),
+          totalUsers: await BuddysModel.countDocuments({ role: "" }),
           totalSubscribers: await orderModel.countDocuments({}),
           totalVideos: await videoModel.countDocuments({}),
           totalPhotos: await imageModel.countDocuments({}),

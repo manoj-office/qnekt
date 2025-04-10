@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema(
     isSuspended: { type: Boolean, default: false },
     lastActive: { type: Date },
     status: { type: String, default: "Active" },
-    role: { type: String },
+    role: { type: String, default: "" },
   },
   { timestamps: true },
   { versionKey: false },
