@@ -542,14 +542,19 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
 
         if  (!instructorData || instructorData.length === 0) return res.status(404).send({ message: "Instructor details not found" });
 
+        
+
+
         const results = await Promise.all(
           result1.map(async (course) => {
-             
-            const instructor = await BuddysModel.findById(course.instructor).select("firstName lastName image");
+            const category = await categoryModel.findById(course.subjectId);
+            const subjectName = category?.name || "";
+        
+            const instructor = await BuddysModel.findById(course.instructor).select("firstName lastName  image");
         
             return {
               ...course._doc,
-              subjectName,              
+              subjectName,
               instructorDetails: instructor || null
             };
           })
