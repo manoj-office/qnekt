@@ -537,8 +537,14 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
 
         const result = await Promise.all(results.map(async (course) => {
 
-          const instructor = await BuddysModel.findById(course.instructor).select("firstName lastName image");
+          let instructor = null;
 
+          if (mongoose.Types.ObjectId.isValid(course.instructor)) {
+            instructor = await BuddysModel
+              .findOne({ _id: course.instructor })
+              .select("firstName lastName image");
+          }
+          
           return {
             ...course._doc,
             subjectName: existingCategory.name || "",
