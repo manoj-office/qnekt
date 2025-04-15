@@ -403,7 +403,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
 router.post("/courses", upload.single("image"), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, subjectId, courseName, description, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, ID } = req.body;
+    const { action, subjectId, courseName, description, whatYouWillEarn, features, targetAudience, requirements, instructor, level, lessons, languages, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, ID } = req.body;
     req.body.userId = id;
 
     const image = req.file; // Change req.files to req.file
@@ -424,6 +424,14 @@ router.post("/courses", upload.single("image"), adminTokenValidation, async (req
           subjectId,
           courseName,
           description,
+          whatYouWillEarn,
+          features,
+          targetAudience,
+          requirements,
+          instructor,
+          level,
+          lessons,
+          languages,
           coursePrice,
           courseTime,
           certificationOfCompletion,
@@ -451,6 +459,16 @@ router.post("/courses", upload.single("image"), adminTokenValidation, async (req
         if (subjectId) updateFields.subjectId = subjectId;
         if (courseName) updateFields.courseName = courseName;
         if (description) updateFields.description = description;
+
+        if (whatYouWillEarn) updateFields.whatYouWillEarn = whatYouWillEarn;
+        if (features) updateFields.features = features;
+        if (targetAudience) updateFields.targetAudience = targetAudience;
+        if (requirements) updateFields.requirements = requirements;
+        if (instructor) updateFields.instructor = instructor;
+        if (level) updateFields.level = level;
+        if (lessons) updateFields.lessons = lessons;
+        if (languages) updateFields.languages = languages;
+
         if (coursePrice) updateFields.coursePrice = coursePrice;
         if (courseTime) updateFields.courseTime = courseTime;
         if (certificationOfCompletion) updateFields.certificationOfCompletion = certificationOfCompletion;
@@ -515,10 +533,29 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
         const existingCategory = await categoryModel.findOne({ _id: ID });
         if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
-        const result = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
-        // const result = await coursesModel.find({ subjectId: ID });
+        const result1 = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
 
-        res.status(200).json({ message: "Data received", result });
+        const courseInstructor = result1.map(course => course.instructor);
+       
+        const instructorData = await BuddysModel.findOne({ _id: { $in: courseInstructor } }).select("firstName lastName emailId image");
+
+
+        if  (!instructorData || instructorData.length === 0) return res.status(404).send({ message: "Instructor details not found" });
+
+        const results = await Promise.all(
+          result1.map(async (course) => {
+             
+            const instructor = await BuddysModel.findById(course.instructor).select("firstName lastName image");
+        
+            return {
+              ...course._doc,
+              subjectName,              
+              instructorDetails: instructor || null
+            };
+          })
+        );
+
+        res.status(200).json({ message: "Data received", result: results });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
