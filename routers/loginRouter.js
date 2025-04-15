@@ -362,7 +362,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
         const existingCategory = await categoryModel.findOne({ _id: ID });
         if (!existingCategory) return res.status(400).send({ message: "category is not found in table." });
 
-        const query = {};
+        let query = {};
 
         if (name) query.name = name;
         if (description) query.description = description;
@@ -453,7 +453,7 @@ router.post("/courses", upload.single("image"), adminTokenValidation, async (req
       } else if (action === "update") {
         if (!ID) return res.status(400).json({ error: "ID required for update" });
 
-        const updateFields = {};
+        let updateFields = {};
         // Number, Name, Description, Icons, Status
         // subjectId, courseName, description, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, status
         if (subjectId) updateFields.subjectId = subjectId;
@@ -602,7 +602,7 @@ router.post("/users", adminTokenValidation, upload.single("image"), async (req, 
       } else if (action === "update") {
         if (!ID) return res.status(400).json({ message: "ID required for update" });
 
-        const updateFields = {};
+        let updateFields = {};
 
         if (firstName) updateFields.firstName = ID;
         if (lastName) updateFields.lastName = lastName;
@@ -757,7 +757,7 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const updateFields = {};
+        let updateFields = {};
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
@@ -921,7 +921,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const updateFields = {};
+        let updateFields = {};
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
@@ -1083,7 +1083,7 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const updateFields = {};
+        let updateFields = {};
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
@@ -1398,7 +1398,7 @@ router.post("/cart", tokenValidation, async (req, res) => {
       } else if (action === "update") {
         if (!ID) return res.status(400).json({ message: "ID required for update" });
 
-        const updateFields = {};
+        let updateFields = {};
 
         if (courseId) updateFields.courseId = courseId;
 
