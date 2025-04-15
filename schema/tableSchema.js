@@ -210,6 +210,22 @@ const siteSettingsSchema = new mongoose.Schema(
     { collection: "site Settings" }
 );
 
+const dashBoardSchema = new mongoose.Schema(
+    {
+        silder: { type: Array},
+        popularMostWatch: [{
+            path: { type: String },
+            isFeature: { type: Boolean, default: false }
+        }],
+        status: { type: String, default: "Active" }, //completed
+    },
+    { timestamps: true },
+    { versionKey: false },
+    { collection: "dashBoard" }
+);
+
+
+
 const categoryModel = mongoose.model("Category", categorySchema);
 const coursesModel = mongoose.model("Course", coursesSchema);
 const studentModel = mongoose.model("Student", studentSchema);
@@ -219,6 +235,7 @@ const libraryModel = mongoose.model("Library", librarySchema);
 const cartModel = mongoose.model("Cart", cartSchema);
 
 const siteSettingsModel = mongoose.model("site Settings", siteSettingsSchema);
+const dashBoardsModel = mongoose.model("dashBoard", dashBoardSchema);
 
 
 const orderModel = mongoose.model("Order", orderSchema);
@@ -237,4 +254,5 @@ module.exports = {
     libraryModel,
     cartModel,
     siteSettingsModel,
+    dashBoardsModel,
 };

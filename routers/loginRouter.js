@@ -6,7 +6,7 @@ const { createAdminToken, createRefreshAdminToken, tokenValidation, adminTokenVa
 const { hashCompare, hashPassword, createToken, createRefreshToken } = require("../auth/auth.js");
 const { BuddysModel } = require("../schema/loginSchema.js");
 const { generateUsername } = require("../services/loginFunctions.js");
-const { categoryModel, coursesModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel, siteSettingsModel, enrollmentModel } = require("../schema/tableSchema.js");
+const { categoryModel, coursesModel, libraryModel, videoModel, imageModel, lessonsModel, orderModel, siteSettingsModel, enrollmentModel, dashBoardsModel } = require("../schema/tableSchema.js");
 
 
 const fs = require('fs');
@@ -2011,6 +2011,81 @@ router.post("/listResource", tokenValidation, async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
+
+
+router.post("/dashBoard", upload.fields([{ name: "silder", maxCount: 20 }, { name: "popularMostWatch", maxCount: 10 }]), async (req, res) => {
+  try {
+    const { action, ID } = req.body;
+    const silder = req.files?.silder?.map(file => file.path) || [];
+    const popularMostWatch = req.files?.popularMostWatch?.map(file => ({
+      path: file.path,
+      isFeature: false,
+    })) || [];
+
+    if (action == "create") {
+
+      const newDashBoard = new dashBoardsModel({
+        silder,
+        popularMostWatch,
+        status: "Active",
+
+      });
+
+      await newDashBoard.save();
+
+      res.status(201).json({ message: "DashBoard Created", result: newDashBoard });
+    } else if (action === "readAll") {
+      const readDashBoard = await dashBoardsModel.find();
+
+      if (!readDashBoard) return res.status(400).json({ error: "DashBoard not found" });
+
+      res.status(200).json({ message: "DashBoard Details", result: readDashBoard });
+    } else if (action === "update") {
+      if (!ID) return res.status(400).json({ error: "ID required for update" });
+
+      const updateFields = {};
+      if (silder) updateFields.silder = silder;
+      if (popularMostWatch) updateFields.popularMostWatch = popularMostWatch;
+
+
+      const updateDashBoard = await dashBoardsModel.findOneAndUpdate(
+        { _id: ID },
+        updateFields,
+        { new: true }
+      );
+
+      // const rootId = result.result._id;
+      // const popularMostWatchId = result.result.popularMostWatch[0]._id;
+
+      // const updateDashBoard = await collection.updateOne(
+      //   { _id: new ObjectId(rootId) },  
+      //   { $set: { status: 'Updated' } }  
+      // );
+
+      if (!updateDashBoard) return res.status(400).json({ error: "DashBoard not found" });
+
+      res.status(200).json({ message: "DashBoard Updated ", result: updateDashBoard });
+    } else if (action === "delete") {
+      if (!ID) return res.status(400).json({ error: "ID required for deletion" });
+
+      const deleteDashBoard = await dashBoardsModel.findByIdAndUpdate(
+        ID,
+        { status: "Inactive" },
+        { new: "true" }
+      );
+
+      if (!deleteDashBoard) return res.status(404).json({ error: "DashBoard not found" });
+
+      res.status(200).json({ message: "DashBoard status set to be inactive ", result: deleteDashBoard });
+    } else res.status(400).send({ message: "Action Does Not Exist." });
+
+
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({ message: "Internal Server Error", error })
+  }
+});
+
 
 
 
