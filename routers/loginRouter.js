@@ -531,36 +531,23 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
           : {};
 
         const existingCategory = await categoryModel.findOne({ _id: ID });
-        if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
+        if (!existingCategory) return res.status(400).send({ message: "No subject (category) found in table." });
 
-        const result1 = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
+        const results = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
 
-        const courseInstructor = result1.map(course => course.instructor);
-       
-        const instructorData = await BuddysModel.findOne({ _id: { $in: courseInstructor } }).select("firstName lastName emailId image");
+        const result = await Promise.all(results.map(async (course) => {
 
+          const instructor = await BuddysModel.findById(course.instructor).select("firstName lastName image");
 
-        if  (!instructorData || instructorData.length === 0) return res.status(404).send({ message: "Instructor details not found" });
-
-        
-
-
-        const results = await Promise.all(
-          result1.map(async (course) => {
-            const category = await categoryModel.findById(course.subjectId);
-            const subjectName = category?.name || "";
-        
-            const instructor = await BuddysModel.findById(course.instructor).select("firstName lastName  image");
-        
-            return {
-              ...course._doc,
-              subjectName,
-              instructorDetails: instructor || null
-            };
-          })
+          return {
+            ...course._doc,
+            subjectName: existingCategory.name || "",
+            instructorDetails: instructor || null
+          };
+        })
         );
 
-        res.status(200).json({ message: "Data received", result: results });
+        res.status(200).json({ message: "Data received", result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {

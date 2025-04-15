@@ -30,6 +30,7 @@ const coursesSchema = new mongoose.Schema(
         subjectId: { type: String },
         courseName: { type: String },
         description: { type: String },
+
         whatYouWillEarn: { type: String },
         features: { type: String },
         targetAudience: { type: String },
@@ -38,6 +39,7 @@ const coursesSchema = new mongoose.Schema(
         level: { type: String },
         lessons: { type: String},
         languages: { type: String},
+
         coursePrice: { type: String },
         courseTime: { type: String },
         certificationOfCompletion: { type: Boolean },
