@@ -734,19 +734,50 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
-        const result = new videoModel({
-          userId: id,
-          categoryId,
-          courseId,
-          video: videos, // Store file paths
-          name,
-          description,
-          icons,
-        });
+        const existingRecord = await videoModel.findOne({ courseId });
 
-        await result.save();
+        if (existingRecord) {
+          // Append new videos to the existing ones
+          const updatedVideos = [...existingRecord.video, ...videos];
 
-        res.status(200).send({ message: "video succefully uploaded.", result });
+          existingRecord.categoryId = categoryId || existingRecord.categoryId;
+          existingRecord.name = name || existingRecord.name;
+          existingRecord.description = description || existingRecord.description;
+          existingRecord.icons = icons || existingRecord.icons;
+          existingRecord.video = updatedVideos;
+
+          await existingRecord.save();
+
+          res.status(200).send({ message: "Video record updated successfully.", result: existingRecord });
+        } else {
+          // Create a new video record
+          const result = new videoModel({
+            userId: id,
+            categoryId,
+            courseId,
+            video: videos,
+            name,
+            description,
+            icons,
+          });
+
+          await result.save();
+
+          res.status(200).send({ message: "Video successfully uploaded.", result });
+        }
+        // const result = new videoModel({
+        //   userId: id,
+        //   categoryId,
+        //   courseId,
+        //   video: videos, // Store file paths
+        //   name,
+        //   description,
+        //   icons,
+        // });
+
+        // await result.save();
+
+        // res.status(200).send({ message: "video succefully uploaded.", result });
       } else if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -900,19 +931,36 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
-        const result = new imageModel({
-          userId: id,
-          categoryId,
-          courseId,
-          image: images,
-          name,
-          description,
-          icons,
-        });
+        const existingRecord = await imageModel.findOne({ courseId });
+        if (existingRecord) {
+          // Append new images to existing ones
+          const updatedImages = [...existingRecord.image, ...images];
 
-        await result.save();
+          existingRecord.categoryId = categoryId || existingRecord.categoryId;
+          existingRecord.name = name || existingRecord.name;
+          existingRecord.description = description || existingRecord.description;
+          existingRecord.icons = icons || existingRecord.icons;
+          existingRecord.image = updatedImages;
 
-        res.status(200).send({ message: "image succefully uploaded.", result });
+          await existingRecord.save();
+
+          res.status(200).send({ message: "Image record updated successfully.", result: existingRecord });
+        } else {
+          // Create new image record
+          const result = new imageModel({
+            userId: id,
+            categoryId,
+            courseId,
+            image: images,
+            name,
+            description,
+            icons,
+          });
+
+          await result.save();
+
+          res.status(200).send({ message: "Image successfully uploaded.", result });
+        }
       } else if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -1064,19 +1112,51 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "create") {
-        const result = new libraryModel({
-          userId: id,
-          categoryId,
-          courseId,
-          library: libraries,
-          name,
-          description,
-          icons,
-        });
+        const existingRecord = await libraryModel.findOne({ courseId });
 
-        await result.save();
+        if (existingRecord) {
+          // Merge existing and new library files
+          const updatedLibrary = [...existingRecord.library, ...libraries];
 
-        res.status(200).send({ message: "library successfully created.", result });
+          // Update fields if new values are provided
+          existingRecord.categoryId = categoryId || existingRecord.categoryId;
+          existingRecord.name = name || existingRecord.name;
+          existingRecord.description = description || existingRecord.description;
+          existingRecord.icons = icons || existingRecord.icons;
+          existingRecord.library = updatedLibrary;
+
+          await existingRecord.save();
+
+          res.status(200).send({ message: "Library record updated successfully.", result: existingRecord });
+        } else {
+          // No existing record with the courseId, create new
+          const result = new libraryModel({
+            userId: id,
+            categoryId,
+            courseId,
+            library: libraries,
+            name,
+            description,
+            icons,
+          });
+
+          await result.save();
+
+          res.status(200).send({ message: "Library successfully created.", result });
+        }
+        // const result = new libraryModel({
+        //   userId: id,
+        //   categoryId,
+        //   courseId,
+        //   library: libraries,
+        //   name,
+        //   description,
+        //   icons,
+        // });
+
+        // await result.save();
+
+        // res.status(200).send({ message: "library successfully created.", result });
       } else if (action == "read") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
