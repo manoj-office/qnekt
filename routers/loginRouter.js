@@ -1363,24 +1363,6 @@ router.post("/listCourses", async (req, res) => {
 
 // //course - R
 
-// router.post("/courseRead", async (req, res) => {
-//   try {
-//     const id = req.userId;
-//     const { action, ID } = req.body; // Extract action and status
-//     req.body.userId = id;
-
-//     if(action == "read") {
-//       const result = await coursesModel.find({ _id: ID });
-
-//       if(!result) return  res.status(400).send({ message: "no course found for the subject." });
-
-//       res.status(200).json({ message: "Course Details.", result });
-//     } else res.status(400).send({ message: "Action Does Not Exist." });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// })
-
 //course - R
 router.post("/courseRead", userValidation, async (req, res) => {
   try {
@@ -1397,37 +1379,48 @@ router.post("/courseRead", userValidation, async (req, res) => {
     if (action == "read") {
       if (!ID) return res.status(400).json({ message: "ID is required" });
 
-      const result = await coursesModel.findOne({ _id: ID, status: "Active", });
-      if (!result) return res.status(400).send({ message: "No course found." });
-
-      // Get the subject data
-      const subject = await categoryModel.findOne({ _id: result.subjectId, status: "Active", });
-
-      // Merge subject name into result
-      const courseWithSubject = {
-        ...result._doc,
+      const course = await coursesModel.findOne({ _id: ID, status: "Active" });
+      if (!course) return res.status(400).json({ message: "No course found." });
+    
+      // Get subject data
+      const subject = await categoryModel.findOne({ _id: course.subjectId, status: "Active" });
+    
+      // Get instructor data
+      let instructor = null;
+      if (mongoose.Types.ObjectId.isValid(course.instructor)) {
+        instructor = await BuddysModel
+          .findOne({ _id: course.instructor })
+          .select("firstName lastName image");
+      }
+    
+      // Merge course with subject and instructor info
+      const courseWithDetails = {
+        ...course._doc,
         subjectName: subject ? subject.name : "",
+        instructorDetails: instructor || null,
       };
-
-      const checkCourse = await enrollmentModel.findOne({ courseId: result._id, userId: id });
-      if (checkCourse) {
-        const video = await videoModel.find({ courseId: result._id, status: "Active" }).select("video");
-        const image = await imageModel.find({ courseId: result._id, status: "Active" }).select("image");
-
-        const flattenedImage = [...new Set(image.flatMap(item => item.image))];
-        const flattenedVideo = [...new Set(video.flatMap(item => item.video))];
-
-        const courseWith = {
-          ...result._doc,
-          subjectName: subject ? subject.name : "",
-          videosList: flattenedImage ? flattenedImage : [],
-          imagesList: flattenedVideo ? flattenedVideo : []
-        };
-
-        return res.status(200).json({ message: "Course Details.", result: courseWith });
+    
+      // Check if the user is enrolled
+      const checkEnrollment = await enrollmentModel.findOne({ courseId: course._id, userId: id });
+    
+      if (checkEnrollment) {
+        const videoDocs = await videoModel.find({ courseId: course._id, status: "Active" }).select("video");
+        const imageDocs = await imageModel.find({ courseId: course._id, status: "Active" }).select("image");
+    
+        const flattenedVideos = [...new Set(videoDocs.flatMap(item => item.video || []))];
+        const flattenedImages = [...new Set(imageDocs.flatMap(item => item.image || []))];
+    
+        return res.status(200).json({
+          message: "Course Details.",
+          result: {
+            ...courseWithDetails,
+            videosList: flattenedVideos ? flattenedVideos : [],
+            imagesList: flattenedImages ? flattenedImages : [],
+          }
+        });
       }
 
-      return res.status(200).json({ message: "Course Details.", result: courseWithSubject });
+      return res.status(200).json({ message: "Course Details.", result: courseWithDetails });
     } else res.status(400).send({ message: "Action Does Not Exist." });
     // } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
