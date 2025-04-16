@@ -2085,6 +2085,73 @@ router.post("/dashboard", upload.fields([{ name: "slider", maxCount: 20 },]), as
   }
 });
 
+//  admin
+// creating Dashboard from upload files & youtube Links
+router.post("/banner", adminTokenValidation, upload.fields([{ name: "slider", maxCount: 20 }]), async (req, res) => {
+  try {
+    const id = req.userId;
+    const { action, ID, popular } = req.body;
+    req.body.userId = id;
+
+    const slider = req.files?.slider?.map(file => file.path) || [];
+
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
+
+    const user = await BuddysModel.findOne({ _id: id });
+    if (user) {
+      if (action === "create") {
+        const newDashBoard = new dashBoardsModel({
+          slider,
+          popularMostWatch: popular
+        });
+
+        await newDashBoard.save();
+
+        res.status(201).json({ message: "DashBoard Created", result: newDashBoard });
+      } else if (action === "read") {
+        const readDashBoard = await dashBoardsModel.find({});
+
+        if (!readDashBoard) return res.status(400).json({ error: "DashBoard not found" });
+
+        res.status(200).json({ message: "DashBoard Details", result: readDashBoard });
+      } else if (action === "update") {
+        if (!ID) return res.status(400).json({ error: "ID required for update" });
+
+        let updateFields = {};
+
+        if (req.files?.slider?.length > 0) updateFields.slider = slider;
+        if (popular) updateFields.popularMostWatch = popular;
+
+        const updateDashBoard = await dashBoardsModel.findOneAndUpdate(
+          { _id: ID },
+          updateFields,
+          { new: true }
+        );
+
+        if (!updateDashBoard) return res.status(400).json({ error: "DashBoard not found" });
+
+        res.status(200).json({ message: "DashBoard Updated ", result: updateDashBoard });
+      } else if (action === "delete") {
+        if (!ID) return res.status(400).json({ error: "ID required for deletion" });
+
+        const deleteDashBoard = await dashBoardsModel.findByIdAndUpdate(
+          ID,
+          { status: "Inactive" },
+          { new: true }
+        );
+
+        if (!deleteDashBoard) return res.status(404).json({ error: "DashBoard not found" });
+
+        res.status(200).json({ message: "DashBoard status set to be inactive ", result: deleteDashBoard });
+      } else res.status(400).send({ message: "Action Does Not Exist." });
+    } else res.status(400).send({ message: "User Does Not Exist." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 
 
