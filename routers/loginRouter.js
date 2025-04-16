@@ -2038,7 +2038,7 @@ router.post("/dashboard", upload.fields([{ name: "slider", maxCount: 20 },]), as
 
       res.status(201).json({ message: "DashBoard Created", result: newDashBoard });
     } else if (action === "read") {
-      const readDashBoard = await dashBoardsModel.find({});
+      const readDashBoard = await dashBoardsModel.findOne({ status: "Active"});
 
       if (!readDashBoard) return res.status(400).json({ error: "DashBoard not found" });
 
