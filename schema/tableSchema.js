@@ -212,11 +212,8 @@ const siteSettingsSchema = new mongoose.Schema(
 
 const dashBoardSchema = new mongoose.Schema(
     {
-        silder: { type: Array},
-        popularMostWatch: [{
-            path: { type: String },
-            isFeature: { type: Boolean, default: false }
-        }],
+        slider: { type: Array},
+        popularMostWatch: { type: Array},
         status: { type: String, default: "Active" }, //completed
     },
     { timestamps: true },

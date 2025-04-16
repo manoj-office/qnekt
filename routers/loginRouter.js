@@ -115,7 +115,7 @@ router.post("/login", async (req, res) => {
 
     if (email !== "") {
       user = await BuddysModel.findOne({
-        $and: [{ emailId: email, status:"Active" },],
+        $and: [{ emailId: email, status: "Active" },],
       })
         .sort({ createdAt: -1 })
         .limit(1);
@@ -124,7 +124,7 @@ router.post("/login", async (req, res) => {
 
     } else if (mobNo !== "") {
       user = await BuddysModel.findOne({
-        $and: [{ mobNo: mobNo, status:"Active" }],
+        $and: [{ mobNo: mobNo, status: "Active" }],
       })
         .sort({ createdAt: -1 })
         .limit(1);
@@ -544,7 +544,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
               .findOne({ _id: course.instructor })
               .select("firstName lastName image");
           }
-          
+
           return {
             ...course._doc,
             subjectName: existingCategory.name || "",
@@ -1225,7 +1225,7 @@ router.post("/subjectList", async (req, res) => {
         ? { name: { $regex: searchKeyword, $options: "i" } }
         : {}; // If no keyword, fetch all
 
-      const existingCategory = await categoryModel.find({ status: "Active", ...filter}).skip(skip).limit(pageSize);
+      const existingCategory = await categoryModel.find({ status: "Active", ...filter }).skip(skip).limit(pageSize);
       if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
       res.status(200).send({ message: "Subject's List.", result: existingCategory });
@@ -1308,41 +1308,41 @@ router.post("/courseRead", userValidation, async (req, res) => {
 
     // const user = await BuddysModel.findOne({ _id: id });
     // if (user) {
-      if (action == "read") {
-        if (!ID) return res.status(400).json({ message: "ID is required" });
+    if (action == "read") {
+      if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const result = await coursesModel.findOne({ _id: ID,  status: "Active", });
-        if (!result) return res.status(400).send({ message: "No course found." });
+      const result = await coursesModel.findOne({ _id: ID, status: "Active", });
+      if (!result) return res.status(400).send({ message: "No course found." });
 
-        // Get the subject data
-        const subject = await categoryModel.findOne({ _id: result.subjectId, status: "Active", });
+      // Get the subject data
+      const subject = await categoryModel.findOne({ _id: result.subjectId, status: "Active", });
 
-        // Merge subject name into result
-        const courseWithSubject = {
+      // Merge subject name into result
+      const courseWithSubject = {
+        ...result._doc,
+        subjectName: subject ? subject.name : "",
+      };
+
+      const checkCourse = await enrollmentModel.findOne({ courseId: result._id, userId: id });
+      if (checkCourse) {
+        const video = await videoModel.find({ courseId: result._id, status: "Active" }).select("video");
+        const image = await imageModel.find({ courseId: result._id, status: "Active" }).select("image");
+
+        const flattenedImage = [...new Set(image.flatMap(item => item.image))];
+        const flattenedVideo = [...new Set(video.flatMap(item => item.video))];
+
+        const courseWith = {
           ...result._doc,
           subjectName: subject ? subject.name : "",
+          videosList: flattenedImage ? flattenedImage : [],
+          imagesList: flattenedVideo ? flattenedVideo : []
         };
 
-        const checkCourse = await enrollmentModel.findOne({ courseId: result._id, userId: id });
-        if (checkCourse) {
-          const video = await videoModel.find({ courseId: result._id, status: "Active" }).select("video");
-          const image = await imageModel.find({ courseId: result._id, status: "Active" }).select("image");
+        return res.status(200).json({ message: "Course Details.", result: courseWith });
+      }
 
-          const flattenedImage = [...new Set(image.flatMap(item => item.image))];
-          const flattenedVideo = [...new Set(video.flatMap(item => item.video))];
-
-          const courseWith = {
-            ...result._doc,
-            subjectName: subject ? subject.name : "",
-            videosList: flattenedImage ? flattenedImage : [],
-            imagesList: flattenedVideo ? flattenedVideo : []
-          };
-
-          return res.status(200).json({ message: "Course Details.", result: courseWith });
-        }
-
-        return res.status(200).json({ message: "Course Details.", result: courseWithSubject });
-      } else res.status(400).send({ message: "Action Does Not Exist." });
+      return res.status(200).json({ message: "Course Details.", result: courseWithSubject });
+    } else res.status(400).send({ message: "Action Does Not Exist." });
     // } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
     console.log(error);
@@ -1627,11 +1627,11 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
                     type: ext,
                     filename: lib.filename || lib.split('/').pop(), // fallback to last part of URL
                     size: lib.size || null // size in bytes or a human-readable format if available
-                  
+
                   };
                 })
               );
-              
+
 
               // Return full course details + subjectName + libraries
               return {
@@ -1695,7 +1695,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
               // Get subjectName from categoryModel
               const category = await categoryModel.findById(course.subjectId);
               const subjectName = category?.name || "";
-                            
+
               // Get image data
               const imageDocs = await imageModel.find({ courseId: course._id }).skip(skip).limit(pageSize);
               const images = imageDocs.flatMap(doc => doc.image); // Combine all image arrays
@@ -1966,7 +1966,7 @@ router.post("/courseEntrollment", tokenValidation, async (req, res) => {
           courseId: courseId,
         });
         await lessons.save();
-        
+
         res.status(201).json({ message: "Order  & Entrollment Created", Order: readdata, Enrollment: readdatas });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exist." });
@@ -2019,29 +2019,26 @@ router.post("/listResource", tokenValidation, async (req, res) => {
 });
 
 
-router.post("/dashBoard", upload.fields([{ name: "silder", maxCount: 20 }, { name: "popularMostWatch", maxCount: 10 }]), async (req, res) => {
+router.post("/dashboard", upload.fields([{ name: "slider", maxCount: 20 },]), async (req, res) => {
   try {
-    const { action, ID } = req.body;
-    const silder = req.files?.silder?.map(file => file.path) || [];
-    const popularMostWatch = req.files?.popularMostWatch?.map(file => ({
-      path: file.path,
-      isFeature: false,
-    })) || [];
+    const { action, ID, popular } = req.body;
+    const slider = req.files?.slider?.map(file => file.path) || [];
+
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
 
     if (action == "create") {
-
       const newDashBoard = new dashBoardsModel({
-        silder,
-        popularMostWatch,
-        status: "Active",
-
+        slider,
+        popularMostWatch: popular
       });
 
       await newDashBoard.save();
 
       res.status(201).json({ message: "DashBoard Created", result: newDashBoard });
-    } else if (action === "readAll") {
-      const readDashBoard = await dashBoardsModel.find();
+    } else if (action === "read") {
+      const readDashBoard = await dashBoardsModel.find({});
 
       if (!readDashBoard) return res.status(400).json({ error: "DashBoard not found" });
 
@@ -2049,24 +2046,16 @@ router.post("/dashBoard", upload.fields([{ name: "silder", maxCount: 20 }, { nam
     } else if (action === "update") {
       if (!ID) return res.status(400).json({ error: "ID required for update" });
 
-      const updateFields = {};
-      if (silder) updateFields.silder = silder;
-      if (popularMostWatch) updateFields.popularMostWatch = popularMostWatch;
+      let updateFields = {};
 
+      if (req.files?.slider?.length > 0) updateFields.slider = slider;  
+      if (popular) updateFields.popularMostWatch = popular;
 
       const updateDashBoard = await dashBoardsModel.findOneAndUpdate(
         { _id: ID },
         updateFields,
         { new: true }
       );
-
-      // const rootId = result.result._id;
-      // const popularMostWatchId = result.result.popularMostWatch[0]._id;
-
-      // const updateDashBoard = await collection.updateOne(
-      //   { _id: new ObjectId(rootId) },  
-      //   { $set: { status: 'Updated' } }  
-      // );
 
       if (!updateDashBoard) return res.status(400).json({ error: "DashBoard not found" });
 
@@ -2084,8 +2073,6 @@ router.post("/dashBoard", upload.fields([{ name: "silder", maxCount: 20 }, { nam
 
       res.status(200).json({ message: "DashBoard status set to be inactive ", result: deleteDashBoard });
     } else res.status(400).send({ message: "Action Does Not Exist." });
-
-
   } catch (error) {
     console.log(error);
     res.status(500).send({ message: "Internal Server Error", error })
