@@ -428,7 +428,7 @@ router.post("/courses", upload.single("image"), adminTokenValidation, async (req
           features,
           targetAudience,
           requirements,
-          instructor,
+          instructor: id,
           level,
           lessons,
           languages,
@@ -2044,7 +2044,7 @@ router.post("/dashboard", upload.fields([{ name: "slider", maxCount: 20 },]), as
 
       res.status(201).json({ message: "DashBoard Created", result: newDashBoard });
     } else if (action === "read") {
-      const readDashBoard = await dashBoardsModel.findOne({ status: "Active"});
+      const readDashBoard = await dashBoardsModel.findOne({ status: "Active" });
 
       if (!readDashBoard) return res.status(400).json({ error: "DashBoard not found" });
 
@@ -2054,7 +2054,7 @@ router.post("/dashboard", upload.fields([{ name: "slider", maxCount: 20 },]), as
 
       let updateFields = {};
 
-      if (req.files?.slider?.length > 0) updateFields.slider = slider;  
+      if (req.files?.slider?.length > 0) updateFields.slider = slider;
       if (popular) updateFields.popularMostWatch = popular;
 
       const updateDashBoard = await dashBoardsModel.findOneAndUpdate(
