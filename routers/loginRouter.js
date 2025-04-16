@@ -1374,6 +1374,8 @@ router.post("/courseRead", userValidation, async (req, res) => {
       return res.status(400).send({ message: "Invalid ID." });
     }
 
+    const count = await coursesModel.countDocuments({});
+    const userIds = await enrollmentModel.distinct("userId", { courseId: ID });
     // const user = await BuddysModel.findOne({ _id: id });
     // if (user) {
     if (action == "read") {
@@ -1396,6 +1398,8 @@ router.post("/courseRead", userValidation, async (req, res) => {
       // Merge course with subject and instructor info
       const courseWithDetails = {
         ...course._doc,
+        courseCount: count ? count : 0,
+        studentsCount: userIds.length || 0,
         subjectName: subject ? subject.name : "",
         instructorDetails: instructor || null,
       };
