@@ -854,6 +854,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
               const ext = videoPath.split('.').pop().split('?')[0].toLowerCase();
 
               return {
+                _id: video._id,
                 url: videoPath,
                 type: ext,
                 filename: video.filename || videoPath.split('/').pop(), // fallback to last part of URL
@@ -1018,6 +1019,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
               const ext = imagePath.split('.').pop().split('?')[0].toLowerCase();
 
               return {
+                _id: img._id,
                 url: imagePath,
                 type: ext,
                 filename: img.filename || imagePath.split('/').pop(), // fallback to last part of URL
@@ -1180,6 +1182,7 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
               const ext = libraryPath.split('.').pop().split('?')[0].toLowerCase();
 
               return {
+                _id: lib._id,
                 url: libraryPath,
                 type: ext,
                 filename: lib.filename || libraryPath.split('/').pop(), // fallback to last part of URL
