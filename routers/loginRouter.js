@@ -810,7 +810,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
     if (user) {
       if (action == "readAll") {
         // Step 1: Get all video records
-        const videos = await videoModel.find({}).select("courseId video");
+        const videos = await videoModel.find({}).select("courseId video status");
         if (!videos || videos.length === 0) return res.status(404).send({ message: "No videos found." });
 
         // Step 2: Extract and validate unique courseIds from videos
@@ -855,6 +855,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
 
               return {
                 _id: video._id,
+                status: video.status || "",
                 url: videoPath,
                 type: ext,
                 filename: video.filename || videoPath.split('/').pop(), // fallback to last part of URL
@@ -975,7 +976,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
     if (user) {
       if (action == "readAll") {
         // Step 1: Get all image records
-        const images = await imageModel.find({}).select("courseId image");
+        const images = await imageModel.find({}).select("courseId image status");
         if (!images || images.length === 0) return res.status(404).send({ message: "No images found." });
 
         // Step 2: Extract and validate unique courseIds from images
@@ -1020,6 +1021,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 
               return {
                 _id: img._id,
+                status: img.status || "",
                 url: imagePath,
                 type: ext,
                 filename: img.filename || imagePath.split('/').pop(), // fallback to last part of URL
@@ -1138,7 +1140,7 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
     if (user) {
       if (action == "readAll") {
         // Step 1: Get all library records
-        const libraries = await libraryModel.find({}).select("courseId library");
+        const libraries = await libraryModel.find({}).select("courseId library status");
         if (!libraries || libraries.length === 0) return res.status(404).send({ message: "No libraries found." });
 
         // Step 2: Extract and validate unique courseIds from libraries
@@ -1183,6 +1185,7 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
 
               return {
                 _id: lib._id,
+                status: lib.status || "",
                 url: libraryPath,
                 type: ext,
                 filename: lib.filename || libraryPath.split('/').pop(), // fallback to last part of URL
