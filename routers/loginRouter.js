@@ -793,7 +793,7 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
         const { oldVideoPath } = req.body; // You need to send this in your request
 
         const record = await videoModel.findById(ID);
-        if (!record) return res.status(400).json({ error: "Video not found in table." });
+        if (!record) return res.status(400).json({ message: "Video not found in table." });
 
         // Update fields if provided
         if (categoryId) record.categoryId = categoryId;
@@ -983,24 +983,37 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        let updateFields = {};
+        const { oldImagePath } = req.body;
 
-        if (categoryId) updateFields.categoryId = categoryId;
-        if (courseId) updateFields.courseId = courseId;
-        if (req.files && req.files.length > 0) updateFields.image = images; // Update only if new files uploaded
-        if (name) updateFields.name = name;
-        if (description) updateFields.description = description;
-        if (icons) updateFields.icons = icons;
+        const record = await imageModel.findById(ID);
+        if (!record) return res.status(400).json({ message: "Image record not found in table." });
 
-        const result = await imageModel.findOneAndUpdate(
-          { _id: ID },
-          updateFields,
-          { new: true }
-        );
+        // Update fields if provided
+        if (categoryId) record.categoryId = categoryId;
+        if (courseId) record.courseId = courseId;
+        if (name) record.name = name;
+        if (description) record.description = description;
+        if (icons) record.icons = icons;
 
-        if (!result) return res.status(400).json({ error: "image not found in table." });
+        if (oldImagePath && req.files && req.files.length > 0) {
+          const newImagePath = req.files[0].path;
 
-        res.status(200).json({ message: "image Details", result });
+          const index = record.image.findIndex(img => img === oldImagePath);
+          if (index !== -1) {
+            record.image[index] = newImagePath; // Replace old image
+          } else {
+            record.image.push(newImagePath); // Append if old image not found
+          }
+        } else {
+          // Replace the image array only if new files uploaded and no oldImagePath provided
+          if (req.files && req.files.length > 0) {
+            const images = req.files.map(file => file.path);
+            record.image = images;
+          }
+        }
+
+        await record.save();
+        res.status(200).json({ message: "Image updated successfully.", result: record });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -1179,24 +1192,37 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        let updateFields = {};
+        const { oldLibraryPath } = req.body;
 
-        if (categoryId) updateFields.categoryId = categoryId;
-        if (courseId) updateFields.courseId = courseId;
-        if (req.files && req.files.length > 0) updateFields.library = libraries; // Update only if new files uploaded
-        if (name) updateFields.name = name;
-        if (description) updateFields.description = description;
-        if (icons) updateFields.icons = icons;
+        const record = await libraryModel.findById(ID);
+        if (!record) return res.status(400).json({ error: "Library record not found in table." });
 
-        const result = await libraryModel.findOneAndUpdate(
-          { _id: ID },
-          updateFields,
-          { new: true }
-        );
+        // Update fields if provided
+        if (categoryId) record.categoryId = categoryId;
+        if (courseId) record.courseId = courseId;
+        if (name) record.name = name;
+        if (description) record.description = description;
+        if (icons) record.icons = icons;
 
-        if (!result) return res.status(400).json({ error: "library not found in table." });
+        if (oldLibraryPath && req.files && req.files.length > 0) {
+          const newLibraryPath = req.files[0].path;
 
-        res.status(200).json({ message: "library Details", result });
+          const index = record.library.findIndex(item => item === oldLibraryPath);
+          if (index !== -1) {
+            record.library[index] = newLibraryPath; // Replace specific file
+          } else {
+            record.library.push(newLibraryPath); // Append if old path not found
+          }
+        } else {
+          // Replace the library field only if new files are uploaded and no old path given
+          if (req.files && req.files.length > 0) {
+            const libraries = req.files.map(file => file.path);
+            record.library = libraries;
+          }
+        }
+
+        await record.save();
+        res.status(200).json({ message: "Library updated successfully.", result: record });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
