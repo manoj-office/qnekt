@@ -795,7 +795,7 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
         if (oldVideoPath && req.files && req.files.length > 0) {
-          updateFields.video = [oldVideoPath, ...videos]; // Assuming `videos` is an array
+          updateFields.video = [...oldVideoPath, ...videos]; // Assuming `videos` is an array
         } else if (req.files && req.files.length > 0) {
           updateFields.video = videos;
         } else if (oldVideoPath) {
@@ -989,7 +989,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
         if (oldImagePath && req.files && req.files.length > 0) {
-          updateFields.image = [oldImagePath, ...images]; // Assuming `videos` is an array
+          updateFields.image = [...oldImagePath, ...images]; // Assuming `videos` is an array
         } else if (req.files && req.files.length > 0) {
           updateFields.image = images;
         } else if (oldImagePath) {
@@ -1191,7 +1191,7 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
         if (oldLibraryPath && req.files && req.files.length > 0) {
-          updateFields.library = [oldLibraryPath, ...libraries]; // Assuming `videos` is an array
+          updateFields.library = [...oldLibraryPath, ...libraries]; // Assuming `videos` is an array
         } else if (req.files && req.files.length > 0) {
           updateFields.library = libraries;
         } else if (oldLibraryPath) {
