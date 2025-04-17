@@ -801,6 +801,7 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
         if (name) record.name = name;
         if (description) record.description = description;
         if (icons) record.icons = icons;
+        
         if (oldVideoPath && req.files && req.files.length > 0) {
           const newVideoPath = req.files[0].path;
       
@@ -811,10 +812,8 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
             // Append instead of returning error
             record.video.push(newVideoPath);
           }
-        } else if (req.files && req.files.length > 0) {
-          // If no oldVideoPath specified, just add new ones
-          const newVideos = req.files.map(file => file.path);
-          record.video.push(...newVideos);
+        } else {
+          if (req.files && req.files.length > 0) updateFields.video = videos; // Update only if new files uploaded
         }
 
         await record.save();
