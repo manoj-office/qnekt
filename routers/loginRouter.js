@@ -368,8 +368,10 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
         if (description) query.description = description;
         if (icons) query.icons = icons;
         if (price) query.price = price;
-        if (isFeature) query.isFeature = isFeature;
-
+        if (typeof isFeature === "string") {
+          query.isFeature = isFeature.toLowerCase() === "true";
+        }
+        
         const result = await categoryModel.findOneAndUpdate(
           { _id: ID },
           query,
