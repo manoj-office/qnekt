@@ -801,17 +801,20 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
         if (name) record.name = name;
         if (description) record.description = description;
         if (icons) record.icons = icons;
-
-        // Replace old video with new one if both exist
         if (oldVideoPath && req.files && req.files.length > 0) {
-          const newVideoPath = req.files[0].path; // assuming one file to replace
-
+          const newVideoPath = req.files[0].path;
+      
           const index = record.video.findIndex(v => v === oldVideoPath);
           if (index !== -1) {
-            record.video[index] = newVideoPath;
+            record.video[index] = newVideoPath; // Replace
           } else {
-            return res.status(400).json({ message: "Old video path not found." });
+            // Append instead of returning error
+            record.video.push(newVideoPath);
           }
+        } else if (req.files && req.files.length > 0) {
+          // If no oldVideoPath specified, just add new ones
+          const newVideos = req.files.map(file => file.path);
+          record.video.push(...newVideos);
         }
 
         await record.save();
