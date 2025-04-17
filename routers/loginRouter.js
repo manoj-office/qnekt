@@ -790,24 +790,32 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        let updateFields = {};
+        const { oldVideoPath } = req.body; // You need to send this in your request
 
-        if (categoryId) updateFields.categoryId = categoryId;
-        if (courseId) updateFields.courseId = courseId;
-        if (req.files && req.files.length > 0) updateFields.video = videos; // Update only if new files uploaded
-        if (name) updateFields.name = name;
-        if (description) updateFields.description = description;
-        if (icons) updateFields.icons = icons;
+        const record = await videoModel.findById(ID);
+        if (!record) return res.status(400).json({ error: "Video not found in table." });
 
-        const result = await videoModel.findOneAndUpdate(
-          { _id: ID },
-          updateFields,
-          { new: true }
-        );
+        // Update fields if provided
+        if (categoryId) record.categoryId = categoryId;
+        if (courseId) record.courseId = courseId;
+        if (name) record.name = name;
+        if (description) record.description = description;
+        if (icons) record.icons = icons;
 
-        if (!result) return res.status(400).json({ error: "Video not found in table." });
+        // Replace old video with new one if both exist
+        if (oldVideoPath && req.files && req.files.length > 0) {
+          const newVideoPath = req.files[0].path; // assuming one file to replace
 
-        res.status(200).json({ message: "Video Details", result });
+          const index = record.video.findIndex(v => v === oldVideoPath);
+          if (index !== -1) {
+            record.video[index] = newVideoPath;
+          } else {
+            return res.status(400).json({ message: "Old video path not found." });
+          }
+        }
+
+        await record.save();
+        res.status(200).json({ message: "Video updated successfully.", result: record });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
