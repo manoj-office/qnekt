@@ -802,18 +802,23 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
         if (description) record.description = description;
         if (icons) record.icons = icons;
         
-        if (oldVideoPath && req.files && req.files.length > 0) {
-          const newVideoPath = req.files[0].path;
-      
+        if (oldVideoPath) {
           const index = record.video.findIndex(v => v === oldVideoPath);
           if (index !== -1) {
-            record.video[index] = newVideoPath; // Replace
-          } else {
-            // Append instead of returning error
-            record.video.push(newVideoPath);
+            if (req.files && req.files.length > 0) {
+              const newVideoPath = req.files[0].path;
+              record.video[index] = newVideoPath; // Replace existing
+            } else {
+              record.video.splice(index, 1); // Just remove
+            }
+          } else if (req.files && req.files.length > 0) {
+            // Append new video if old path doesn't exist
+            record.video.push(req.files[0].path);
           }
         } else {
-          if (req.files && req.files.length > 0) record.video = videos; // Update only if new files uploaded
+          if (req.files && req.files.length > 0) {
+            record.video = videos; // Replace all
+          }
         }
 
         await record.save();
@@ -995,19 +1000,22 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
         if (description) record.description = description;
         if (icons) record.icons = icons;
 
-        if (oldImagePath && req.files && req.files.length > 0) {
-          const newImagePath = req.files[0].path;
-
+        if (oldImagePath) {
           const index = record.image.findIndex(img => img === oldImagePath);
           if (index !== -1) {
-            record.image[index] = newImagePath; // Replace old image
-          } else {
-            record.image.push(newImagePath); // Append if old image not found
+            if (req.files && req.files.length > 0) {
+              const newImagePath = req.files[0].path;
+              record.image[index] = newImagePath; // Replace with new image
+            } else {
+              record.image.splice(index, 1); // Just remove the image
+            }
+          } else if (req.files && req.files.length > 0) {
+            // If old path not found but new files uploaded, append
+            record.image.push(req.files[0].path);
           }
         } else {
-          // Replace the image array only if new files uploaded and no oldImagePath provided
+          // If no oldImagePath and files are uploaded, replace all
           if (req.files && req.files.length > 0) {
-            const images = req.files.map(file => file.path);
             record.image = images;
           }
         }
@@ -1204,21 +1212,21 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
         if (description) record.description = description;
         if (icons) record.icons = icons;
 
-        if (oldLibraryPath && req.files && req.files.length > 0) {
-          const newLibraryPath = req.files[0].path;
-
+        if (oldLibraryPath) {
           const index = record.library.findIndex(item => item === oldLibraryPath);
           if (index !== -1) {
-            record.library[index] = newLibraryPath; // Replace specific file
-          } else {
-            record.library.push(newLibraryPath); // Append if old path not found
+            if (req.files && req.files.length > 0) {
+              const newLibraryPath = req.files[0].path;
+              record.library[index] = newLibraryPath; // Replace with new file
+            } else {
+              record.library.splice(index, 1); // Remove without replacement
+            }
+          } else if (req.files && req.files.length > 0) {
+            // Old path not found but new file uploaded → just add it
+            record.library.push(req.files[0].path);
           }
-        } else {
-          // Replace the library field only if new files are uploaded and no old path given
-          if (req.files && req.files.length > 0) {
-            const libraries = req.files.map(file => file.path);
-            record.library = libraries;
-          }
+        } else if (req.files && req.files.length > 0) {
+          record.library = libraries;// Replace all if no oldLibraryPath
         }
 
         await record.save();
