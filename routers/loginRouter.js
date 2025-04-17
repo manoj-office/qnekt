@@ -724,7 +724,7 @@ router.post("/adminDashboard", adminTokenValidation, async (req, res) => {
 router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, categoryId, courseId, name, description, icons, ID } = req.body;
+    const { action, categoryId, courseId, name, description, icons, ID, oldVideoPath } = req.body;
     req.body.userId = id;
 
     const videos = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
@@ -790,39 +790,30 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const { oldVideoPath } = req.body; // You need to send this in your request
+        let updateFields = {};
 
-        const record = await videoModel.findById(ID);
-        if (!record) return res.status(400).json({ message: "Video not found in table." });
-
-        // Update fields if provided
-        if (categoryId) record.categoryId = categoryId;
-        if (courseId) record.courseId = courseId;
-        if (name) record.name = name;
-        if (description) record.description = description;
-        if (icons) record.icons = icons;
-        
-        if (oldVideoPath) {
-          const index = record.video.findIndex(v => v === oldVideoPath);
-          if (index !== -1) {
-            if (req.files && req.files.length > 0) {
-              const newVideoPath = req.files[0].path;
-              record.video[index] = newVideoPath; // Replace existing
-            } else {
-              record.video.splice(index, 1); // Just remove
-            }
-          } else if (req.files && req.files.length > 0) {
-            // Append new video if old path doesn't exist
-            record.video.push(req.files[0].path);
-          }
-        } else {
-          if (req.files && req.files.length > 0) {
-            record.video = videos; // Replace all
-          }
+        if (categoryId) updateFields.categoryId = categoryId;
+        if (courseId) updateFields.courseId = courseId;
+        if (oldVideoPath && req.files && req.files.length > 0) {
+          updateFields.video = [oldVideoPath, ...videos]; // Assuming `videos` is an array
+        } else if (req.files && req.files.length > 0) {
+          updateFields.video = videos;
+        } else if (oldVideoPath) {
+          updateFields.video = oldVideoPath;
         }
+        if (name) updateFields.name = name;
+        if (description) updateFields.description = description;
+        if (icons) updateFields.icons = icons;
+       
+        const result = await videoModel.findOneAndUpdate(
+          { _id: ID },
+          updateFields,
+          { new: true }
+        );
 
-        await record.save();
-        res.status(200).json({ message: "Video updated successfully.", result: record });
+        if (!result) return res.status(400).json({ error: "Video not found in table." });
+
+        res.status(200).json({ message: "Video Details Updated", result });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -935,7 +926,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
 router.post("/adminImage", upload.array("image", 10), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, categoryId, courseId, name, description, icons, ID } = req.body;
+    const { action, categoryId, courseId, name, description, icons, ID, oldImagePath } = req.body;
     req.body.userId = id;
 
     const images = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
@@ -988,40 +979,30 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const { oldImagePath } = req.body;
+        let updateFields = {};
 
-        const record = await imageModel.findById(ID);
-        if (!record) return res.status(400).json({ message: "Image record not found in table." });
-
-        // Update fields if provided
-        if (categoryId) record.categoryId = categoryId;
-        if (courseId) record.courseId = courseId;
-        if (name) record.name = name;
-        if (description) record.description = description;
-        if (icons) record.icons = icons;
-
-        if (oldImagePath) {
-          const index = record.image.findIndex(img => img === oldImagePath);
-          if (index !== -1) {
-            if (req.files && req.files.length > 0) {
-              const newImagePath = req.files[0].path;
-              record.image[index] = newImagePath; // Replace with new image
-            } else {
-              record.image.splice(index, 1); // Just remove the image
-            }
-          } else if (req.files && req.files.length > 0) {
-            // If old path not found but new files uploaded, append
-            record.image.push(req.files[0].path);
-          }
-        } else {
-          // If no oldImagePath and files are uploaded, replace all
-          if (req.files && req.files.length > 0) {
-            record.image = images;
-          }
+        if (categoryId) updateFields.categoryId = categoryId;
+        if (courseId) updateFields.courseId = courseId;
+        if (oldImagePath && req.files && req.files.length > 0) {
+          updateFields.image = [oldImagePath, ...images]; // Assuming `videos` is an array
+        } else if (req.files && req.files.length > 0) {
+          updateFields.image = images;
+        } else if (oldImagePath) {
+          updateFields.image = oldImagePath;
         }
+        if (name) updateFields.name = name;
+        if (description) updateFields.description = description;
+        if (icons) updateFields.icons = icons;
 
-        await record.save();
-        res.status(200).json({ message: "Image updated successfully.", result: record });
+        const result = await imageModel.findOneAndUpdate(
+          { _id: ID },
+          updateFields,
+          { new: true }
+        );
+
+        if (!result) return res.status(400).json({ error: "image not found in table." });
+
+        res.status(200).json({ message: "image Details Updated", result });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
@@ -1133,7 +1114,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
 router.post("/library", upload.array("library", 10), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, categoryId, courseId, name, description, icons, ID } = req.body;
+    const { action, categoryId, courseId, name, description, icons, ID, oldLibraryPath } = req.body;
     req.body.userId = id;
 
     const libraries = req.files?.map(file => file.path) || []; // Store paths instead of whole file objects
@@ -1200,37 +1181,30 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
       } else if (action == "update") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
-        const { oldLibraryPath } = req.body;
+        let updateFields = {};
 
-        const record = await libraryModel.findById(ID);
-        if (!record) return res.status(400).json({ error: "Library record not found in table." });
-
-        // Update fields if provided
-        if (categoryId) record.categoryId = categoryId;
-        if (courseId) record.courseId = courseId;
-        if (name) record.name = name;
-        if (description) record.description = description;
-        if (icons) record.icons = icons;
-
-        if (oldLibraryPath) {
-          const index = record.library.findIndex(item => item === oldLibraryPath);
-          if (index !== -1) {
-            if (req.files && req.files.length > 0) {
-              const newLibraryPath = req.files[0].path;
-              record.library[index] = newLibraryPath; // Replace with new file
-            } else {
-              record.library.splice(index, 1); // Remove without replacement
-            }
-          } else if (req.files && req.files.length > 0) {
-            // Old path not found but new file uploaded → just add it
-            record.library.push(req.files[0].path);
-          }
+        if (categoryId) updateFields.categoryId = categoryId;
+        if (courseId) updateFields.courseId = courseId;
+        if (oldLibraryPath && req.files && req.files.length > 0) {
+          updateFields.library = [oldLibraryPath, ...libraries]; // Assuming `videos` is an array
         } else if (req.files && req.files.length > 0) {
-          record.library = libraries;// Replace all if no oldLibraryPath
+          updateFields.library = libraries;
+        } else if (oldLibraryPath) {
+          updateFields.library = oldLibraryPath;
         }
+        if (name) updateFields.name = name;
+        if (description) updateFields.description = description;
+        if (icons) updateFields.icons = icons;
 
-        await record.save();
-        res.status(200).json({ message: "Library updated successfully.", result: record });
+        const result = await libraryModel.findOneAndUpdate(
+          { _id: ID },
+          updateFields,
+          { new: true }
+        );
+
+        if (!result) return res.status(400).json({ error: "library not found in table." });
+
+        res.status(200).json({ message: "library Details Updated.", result });
       } else if (action == "delete") {
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
