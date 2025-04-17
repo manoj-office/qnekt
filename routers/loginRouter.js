@@ -813,7 +813,7 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
             record.video.push(newVideoPath);
           }
         } else {
-          if (req.files && req.files.length > 0) updateFields.video = videos; // Update only if new files uploaded
+          if (req.files && req.files.length > 0) record.video = videos; // Update only if new files uploaded
         }
 
         await record.save();
