@@ -890,10 +890,10 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
           // Add video URL + type + filename + size
           const videoUrls = videoDocs.flatMap(video =>
             (video.video || []).map(videoPath => {
-              if (typeof videoPath !== 'string') {
-                console.warn("Unexpected videoPath value:", videoPath);
-                return null; // or skip, or handle as needed
-              }
+              // if (typeof videoPath !== 'string') {
+              //   console.warn("Unexpected videoPath value:", videoPath);
+              //   return null; // or skip, or handle as needed
+              // }
 
               const ext = videoPath.split('.').pop().split('?')[0].toLowerCase();
 
@@ -1286,10 +1286,10 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
           // Add library URL + type + filename + size
           const libraryUrls = libraryDocs.flatMap(lib =>
             (lib.library || []).map(libraryPath => {
-              if (typeof libraryPath !== 'string') {
-                console.warn("Unexpected libraryPath value:", libraryPath);
-                return null; // or skip, or handle as needed
-              }
+              // if (typeof libraryPath !== 'string') {
+              //   console.warn("Unexpected libraryPath value:", libraryPath);
+              //   return null; // or skip, or handle as needed
+              // }
 
               const ext = libraryPath.split('.').pop().split('?')[0].toLowerCase();
 
