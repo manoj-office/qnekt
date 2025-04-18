@@ -993,7 +993,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
         if (courseId) updateFields.courseId = courseId;
 
         if (oldImagePath.length && req.files && req.files.length > 0) {
-          updateFields.image = [...oldImagePath, ...images]; // Assuming `videos` is an array
+          updateFields.image = [...oldImagePath._doc, ...images]; // Assuming `videos` is an array
           console.log("image",updateFields)
         } else if (req.files && req.files.length > 0) {
           updateFields.image = images;
