@@ -792,14 +792,20 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
 
         let updateFields = {};
 
+        // Normalize oldVideoPath to always be an array
+        let normalizedOldVideoPath = [];
+        if (oldVideoPath) {
+          normalizedOldVideoPath = Array.isArray(oldVideoPath) ? oldVideoPath : [oldVideoPath];
+        }
+
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (oldVideoPath && req.files && req.files.length > 0) {
-          updateFields.video = [...oldVideoPath, ...videos]; // Assuming `videos` is an array
+        if (normalizedOldVideoPath && req.files && req.files.length > 0) {
+          updateFields.video = [...normalizedOldVideoPath, ...videos]; // Assuming `videos` is an array
         } else if (req.files && req.files.length > 0) {
           updateFields.video = videos;
-        } else if (oldVideoPath) {
-          updateFields.video = oldVideoPath;
+        } else if (normalizedOldVideoPath.length > 0) {
+          updateFields.video = normalizedOldVideoPath;
         }
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
@@ -985,15 +991,21 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
         if (!ID) return res.status(400).json({ message: "ID is required" });
 
         let updateFields = {};
+        // Normalize oldImagePath to always be an array
+        let normalizedoldImagePath = [];
+        if (oldImagePath) {
+          normalizedoldImagePath = Array.isArray(oldImagePath) ? oldImagePath : [oldImagePath];
+        }
+
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (oldImagePath && req.files && req.files.length > 0) {
-          updateFields.image = [...oldImagePath, ...images]; // Assuming `videos` is an array
+        if (normalizedoldImagePath && req.files && req.files.length > 0) {
+          updateFields.image = [...normalizedoldImagePath, ...images]; // Assuming `videos` is an array
         } else if (req.files && req.files.length > 0) {
           updateFields.image = images;
-        } else if (oldImagePath) {
-          updateFields.image = oldImagePath;
+        } else if (normalizedoldImagePath.length > 0) {
+          updateFields.image = normalizedoldImagePath;
         }
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
