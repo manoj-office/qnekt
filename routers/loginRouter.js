@@ -993,7 +993,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
         if (courseId) updateFields.courseId = courseId;
 
         if (oldImagePath.length && req.files && req.files.length > 0) {
-          oldImagePath.push(...images);
+          oldImagePath.push(images);
           updateFields.image = oldImagePath;
           console.log("image",updateFields)
         } else if (req.files && req.files.length > 0) {
@@ -1003,6 +1003,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
           updateFields.image = oldImagePath;
           console.log("image2",updateFields)
         }
+
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
         if (icons) updateFields.icons = icons;
