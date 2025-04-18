@@ -12,6 +12,7 @@ const categorySchema = new mongoose.Schema(
         instructor_id: { type: String },
         price: { type: String },
         isFeature: { type: Boolean, default: false },
+        isFooter: { type: Boolean, default: false },
         // category_id: { type: String }, 	
         // created_at: { type: Date },
         lastActive: { type: Date },
