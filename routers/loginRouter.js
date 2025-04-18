@@ -991,17 +991,24 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
+        // Ensure oldImagePath is always an array
+        let normalizedOldImagePath = [];
+        if (oldImagePath) {
+          normalizedOldImagePath = Array.isArray(oldImagePath)
+            ? [...oldImagePath] // copy to avoid mutation
+            : [oldImagePath];
+        }
 
-        if (oldImagePath.length && req.files && req.files.length > 0) {
-          oldImagePath.push(images);
-          updateFields.image = oldImagePath;
-          console.log("image",updateFields)
+        if (normalizedOldImagePath.length && req.files && req.files.length > 0) {
+          // Merge old and new images
+          updateFields.image = [...normalizedOldImagePath, ...images];
+          console.log("image", updateFields);
         } else if (req.files && req.files.length > 0) {
           updateFields.image = images;
-          console.log("image1",updateFields)
-        } else if (oldImagePath.length > 0) {
-          updateFields.image = oldImagePath;
-          console.log("image2",updateFields)
+          console.log("image1", updateFields);
+        } else if (normalizedOldImagePath.length > 0) {
+          updateFields.image = normalizedOldImagePath;
+          console.log("image2", updateFields);
         }
 
         if (name) updateFields.name = name;
