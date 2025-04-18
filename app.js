@@ -5,6 +5,8 @@ let cookieParser = require("cookie-parser");
 let logger = require("morgan");
 let cors = require("cors");
 const connectDB = require("./config/mongoDbConfig"); // Ensure MongoDB connection is established
+const https = require('https');
+const fs = require('fs');
 
 // let budsRouters = require("./routes/budsRouters");
 // let chatRouters = require("./routes/chatRouters");
@@ -76,15 +78,25 @@ app.set("port", port);
  * Create HTTP server.
  */
 
-var server = http.createServer(app);
+// var server = http.createServer(app);
 
 /**
  * Listen on provided port, on all network interfaces.
  */
 connectDB;
-server.listen(port, () => console.log("Server is listening :", port));
-server.on("error", onError);
-server.on("listening", onListening);
+const sslServer = https.createServer(
+  {
+    key: fs.readFileSync(path.join(__dirname, 'cert', 'key.pem')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert', 'cert.pem')),
+  },
+  app
+)
+sslServer.listen(port, () => {
+  console.log(`Server is running on port ${port}.`);
+});
+// server.listen(port, () => console.log("Server is listening :", port));
+sslServer.on("error", onError);
+sslServer.on("listening", onListening);
 
 /**
  * Normalize a port into a number, string, or false.
@@ -137,7 +149,7 @@ function onError(error) {
  */
 
 function onListening() {
-  var addr = server.address();
+  var addr = sslServer.address();
   var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   debug("Listening on " + bind);
 }
