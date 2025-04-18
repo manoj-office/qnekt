@@ -795,13 +795,24 @@ router.post("/adminVideo", upload.array("video", 10), adminTokenValidation, asyn
        
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (oldVideoPath && req.files && req.files.length > 0) {
-          updateFields.video = oldVideoPath.concat(videos); // Assuming `videos` is an array
+
+        // Ensure oldVideoPath is always an array
+        let normalizedoldVideoPath = [];
+        if (oldVideoPath) {
+          normalizedoldVideoPath = Array.isArray(oldVideoPath)
+            ? [...oldVideoPath] // copy to avoid mutation
+            : [oldVideoPath];
+        }
+
+        if (normalizedoldVideoPath.length && req.files && req.files.length > 0) {
+          // Merge old and new images
+          updateFields.video = [...normalizedoldVideoPath, ...videos];
         } else if (req.files && req.files.length > 0) {
           updateFields.video = videos;
-        } else if (oldVideoPath) {
-          updateFields.video = oldVideoPath;
+        } else if (normalizedoldVideoPath.length > 0) {
+          updateFields.video = normalizedoldVideoPath;
         }
+
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
         if (icons) updateFields.icons = icons;
@@ -991,6 +1002,7 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
+
         // Ensure oldImagePath is always an array
         let normalizedOldImagePath = [];
         if (oldImagePath) {
@@ -1002,13 +1014,10 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
         if (normalizedOldImagePath.length && req.files && req.files.length > 0) {
           // Merge old and new images
           updateFields.image = [...normalizedOldImagePath, ...images];
-          console.log("image", updateFields);
         } else if (req.files && req.files.length > 0) {
           updateFields.image = images;
-          console.log("image1", updateFields);
         } else if (normalizedOldImagePath.length > 0) {
           updateFields.image = normalizedOldImagePath;
-          console.log("image2", updateFields);
         }
 
         if (name) updateFields.name = name;
@@ -1206,13 +1215,26 @@ router.post("/library", upload.array("library", 10), adminTokenValidation, async
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (oldLibraryPath && req.files && req.files.length > 0) {
-          updateFields.library = [...oldLibraryPath, ...libraries]; // Assuming `videos` is an array
+        
+
+        
+        // Ensure oldLibraryPath is always an array
+        let normalizedoldLibraryPath = [];
+        if (oldLibraryPath) {
+          normalizedoldLibraryPath = Array.isArray(oldLibraryPath)
+            ? [...oldLibraryPath] // copy to avoid mutation
+            : [oldLibraryPath];
+        }
+
+        if (normalizedoldLibraryPath.length && req.files && req.files.length > 0) {
+          // Merge old and new library
+          updateFields.library = [...normalizedoldLibraryPath, ...libraries];
         } else if (req.files && req.files.length > 0) {
           updateFields.library = libraries;
-        } else if (oldLibraryPath) {
-          updateFields.library = oldLibraryPath;
+        } else if (normalizedoldLibraryPath.length > 0) {
+          updateFields.library = normalizedoldLibraryPath;
         }
+
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
         if (icons) updateFields.icons = icons;
