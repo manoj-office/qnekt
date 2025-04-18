@@ -991,13 +991,16 @@ router.post("/adminImage", upload.array("image", 10), adminTokenValidation, asyn
 
         if (categoryId) updateFields.categoryId = categoryId;
         if (courseId) updateFields.courseId = courseId;
-        if (oldImagePath && req.files && req.files.length > 0) {
+
+        if (oldImagePath.length && req.files && req.files.length > 0) {
           updateFields.image = [...oldImagePath, ...images]; // Assuming `videos` is an array
           console.log("image",updateFields)
         } else if (req.files && req.files.length > 0) {
           updateFields.image = images;
-        } else if (oldImagePath) {
+          console.log("image1",updateFields)
+        } else if (oldImagePath.length > 0) {
           updateFields.image = oldImagePath;
+          console.log("image2",updateFields)
         }
         if (name) updateFields.name = name;
         if (description) updateFields.description = description;
