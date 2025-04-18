@@ -321,7 +321,7 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
 router.post("/subject", upload.single("icons"), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, name, description, price, isFeature, ID } = req.body;
+    const { action, name, description, price, isFeature, isFooter, ID } = req.body;
     req.body.userId = id;
 
     const icons = req.file; // Change req.files to req.file
@@ -337,9 +337,11 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
         if (existingCategory) return res.status(400).send({ message: "category with this name already exists." });
 
         let isFeatures;
-        if (typeof isFeature === "string") {
-          isFeatures = isFeature.toLowerCase() === "true";
-        }
+        if (typeof isFeature === "string")  isFeatures = isFeature.toLowerCase() === "true";
+        
+        let isFooters;
+        if (typeof isFeature === "string")  isFooters = isFooter.toLowerCase() === "true";
+    
         const result = new categoryModel({
           userId: id,
           name,
@@ -348,6 +350,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
           icons: icons ? icons.path : "", // Store path (or buffer)
           price,
           isFeature: isFeatures,
+          isFooter: isFooters,
         });
 
         await result.save();
@@ -374,6 +377,9 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
         if (price) query.price = price;
         if (typeof isFeature === "string") {
           query.isFeature = isFeature.toLowerCase() === "true";
+        }
+        if (typeof isFooter === "string") {
+          query.isFooter = isFooter.toLowerCase() === "true";
         }
         
         const result = await categoryModel.findOneAndUpdate(
