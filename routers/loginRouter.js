@@ -336,6 +336,10 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
         const existingCategory = await categoryModel.findOne({ name: name });
         if (existingCategory) return res.status(400).send({ message: "category with this name already exists." });
 
+        let isFeatures;
+        if (typeof isFeature === "string") {
+          isFeatures = isFeature.toLowerCase() === "true";
+        }
         const result = new categoryModel({
           userId: id,
           name,
@@ -343,7 +347,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
           icons,
           icons: icons ? icons.path : "", // Store path (or buffer)
           price,
-          isFeature,
+          isFeature: isFeatures,
         });
 
         await result.save();
