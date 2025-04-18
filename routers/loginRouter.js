@@ -2308,6 +2308,46 @@ router.post("/banner", adminTokenValidation, upload.fields([{ name: "slider", ma
   }
 });
 
+//course studentList
+router.post("/studentList", userValidation, async (req, res) => {
+  try {
+
+    const id = req.userId;
+    const { action, ID } = req.body;
+    req.body.userId = id;
+
+    if (action == "read") {
+      const result = await coursesModel.findOne({ _id: ID });
+      const student = await enrollmentModel.find({ courseId: result._id });
+      // console.log("student", student)
+
+      const studentList = [...new Set(student.map((enrollment) => enrollment.userId.toString()))];
+      // console.log("studentList", studentList)
+
+      const studentListDetails = await BuddysModel.find({ _id: { $in:  studentList }, status: "Active" }).select("firstName lastName image profilePic");
+      // console.log("studentListDetails", studentListDetails)
+      
+      const instructor = await BuddysModel.findOne({ _id: result.userId || id, status: "Active"  }).select("firstName lastName image profilePic")
+
+      const count = {
+        totalStudentsEnrolled: await enrollmentModel.countDocuments({ courseId: ID, status: "Active", }),
+        totalcourseCreated: await coursesModel.countDocuments({ userId: instructor._id || id,  status: "Active", }),
+      };
+
+      const resultWithData = {
+        ...instructor._doc,
+        studentListDetails,
+        count,
+      };
+
+      res.status(200).send({ message: "student List.", result: resultWithData });
+    } else res.status(400).send({ message: "Action Does Not Exist." });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
 
 
 
