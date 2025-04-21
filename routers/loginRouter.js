@@ -304,10 +304,13 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
           ? { name: { $regex: searchKeyword, $options: "i" } }
           : {}; // If no keyword, fetch all
 
-        const existingCategory = await categoryModel.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
-        if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
+        // Get totalCount before pagination
+        const totalCount = await categoryModel.countDocuments(filter);
 
-        res.status(200).send({ message: "Category detail.", count: existingCategory.length, result: existingCategory });
+        const existingCategory = await categoryModel.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
+        if (!existingCategory || existingCategory.length === 0) return res.status(400).send({ message: "No category found in table." });
+
+        res.status(200).send({ message: "Category detail.", totalCount, result: existingCategory });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -546,7 +549,11 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
         const existingCategory = await categoryModel.findOne({ _id: ID });
         if (!existingCategory) return res.status(400).send({ message: "No subject (category) found in table." });
 
-        const results = await coursesModel.find({ subjectId: ID, ...filter }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
+        const query = { subjectId: ID, ...filter };
+        // Get total count BEFORE pagination
+        const totalCount = await coursesModel.countDocuments(query);
+
+        const results = await coursesModel.find(query).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
         const result = await Promise.all(results.map(async (course) => {
 
@@ -566,7 +573,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
         })
         );
 
-        res.status(200).json({ message: "Data received", count: result.length, result });
+        res.status(200).json({ message: "Data received", totalCount, result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -1387,13 +1394,16 @@ router.post("/subjectList", async (req, res) => {
     if (action == "readAll") {
       // Define search filter
       const filter = searchKeyword
-        ? { name: { $regex: searchKeyword, $options: "i" } }
-        : {}; // If no keyword, fetch all
+        ? { name: { $regex: searchKeyword, $options: "i" }, status: "Active" }
+        : { status: "Active" }; // If no keyword, fetch all active
 
-      const existingCategory = await categoryModel.find({ status: "Active", ...filter }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
-      if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
+      // Get total count before pagination
+      const totalCount = await categoryModel.countDocuments(filter);
 
-      res.status(200).send({ message: "Subject's List.", count: existingCategory.length,  result: existingCategory });
+      const existingCategory = await categoryModel.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
+      if (!existingCategory || existingCategory.length === 0) return res.status(400).send({ message: "No category found in table." });
+
+      res.status(200).send({ message: "Subject's List.", totalCount, result: existingCategory });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
@@ -2320,7 +2330,13 @@ router.post("/studentList", userValidation, async (req, res) => {
     const { action, ID } = req.body;
     req.body.userId = id;
 
+    if (ID && !mongoose.Types.ObjectId.isValid(ID)) {
+      return res.status(400).send({ message: "Invalid ID." });
+    }
+
     if (action == "read") {
+      if (!ID) return res.status(400).json({ message: "ID is required" });
+
       const result = await coursesModel.findOne({ _id: ID });
       const student = await enrollmentModel.find({ courseId: result._id });
       // console.log("student", student)
