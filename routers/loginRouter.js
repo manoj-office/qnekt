@@ -307,7 +307,7 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
         const existingCategory = await categoryModel.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
         if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
-        res.status(200).send({ message: "Category detail.", result: existingCategory });
+        res.status(200).send({ message: "Category detail.", count: existingCategory.length, result: existingCategory });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -566,7 +566,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
         })
         );
 
-        res.status(200).json({ message: "Data received", result });
+        res.status(200).json({ message: "Data received", count: result.length, result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exists." });
   } catch (error) {
@@ -1393,7 +1393,7 @@ router.post("/subjectList", async (req, res) => {
       const existingCategory = await categoryModel.find({ status: "Active", ...filter }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
       if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
-      res.status(200).send({ message: "Subject's List.", result: existingCategory });
+      res.status(200).send({ message: "Subject's List.", count: existingCategory.length,  result: existingCategory });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
@@ -2309,14 +2309,13 @@ router.post("/banner", adminTokenValidation, upload.fields([{ name: "slider", ma
     } else res.status(400).send({ message: "User Does Not Exist." });
   } catch (error) {
     console.log(error);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
 //course studentList
 router.post("/studentList", userValidation, async (req, res) => {
   try {
-
     const id = req.userId;
     const { action, ID } = req.body;
     req.body.userId = id;
