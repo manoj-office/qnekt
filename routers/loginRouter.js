@@ -1432,7 +1432,8 @@ router.post("/listCourses", async (req, res) => {
         subjectDescription: existingCategory.description,
       }));
 
-      res.status(200).json({ message: "Course Details List.", coursesCount: enrichedResult.length, result: enrichedResult });
+      res.status(200).json({ message: "Course Details List.", coursesCount: enrichedResult.length, subjectName: existingCategory.name,
+        subjectDescription: existingCategory.description, result: enrichedResult });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
