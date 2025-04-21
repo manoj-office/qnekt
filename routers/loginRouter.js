@@ -1428,10 +1428,11 @@ router.post("/listCourses", async (req, res) => {
       // Add subjectName from category to each course
       const enrichedResult = result.map(course => ({
         ...course.toObject(),
-        subjectName: existingCategory.name
+        subjectName: existingCategory.name,
+        subjectDescription: existingCategory.description,
       }));
 
-      res.status(200).json({ message: "Course Details List.", result: enrichedResult });
+      res.status(200).json({ message: "Course Details List.", coursesCount: enrichedResult.length, result: enrichedResult });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
