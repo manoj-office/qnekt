@@ -115,7 +115,7 @@ router.post("/login", async (req, res) => {
 
     if (email !== "") {
       user = await BuddysModel.findOne({
-        $and: [{ emailId: email, status: "Active" },],
+        emailId: email, status: "Active",
       })
         .sort({ createdAt: -1 })
         .limit(1);
@@ -124,7 +124,7 @@ router.post("/login", async (req, res) => {
 
     } else if (mobNo !== "") {
       user = await BuddysModel.findOne({
-        $and: [{ mobNo: mobNo, status: "Active" }],
+        mobNo: mobNo, status: "Active",
       })
         .sort({ createdAt: -1 })
         .limit(1);
@@ -243,46 +243,46 @@ router.post("/login", async (req, res) => {
 
 
 // 3. forgot password
-router.post("/forgotPassword", async (req, res) => {
-  try {
-    const { mobNo, email, password } = req.body;
+// router.post("/forgotPassword", async (req, res) => {
+//   try {
+//     const { mobNo, email, password } = req.body;
 
-    if (email !== "") {
-      user = await BuddysModel.findOne({
-        $and: [{ emailId: email },],
-      })
-        .sort({ createdAt: -1 })
-        .limit(1);
+//     if (email !== "") {
+//       user = await BuddysModel.findOne({
+//         $and: [{ emailId: email },],
+//       })
+//         .sort({ createdAt: -1 })
+//         .limit(1);
 
-      loginType = "email";
+//       loginType = "email";
 
-    } else if (mobNo !== "") {
-      user = await BuddysModel.findOne({
-        $and: [{ mobNo: mobNo }],
-      })
-        .sort({ createdAt: -1 })
-        .limit(1);
+//     } else if (mobNo !== "") {
+//       user = await BuddysModel.findOne({
+//         $and: [{ mobNo: mobNo }],
+//       })
+//         .sort({ createdAt: -1 })
+//         .limit(1);
 
-      loginType = "mobile";
+//       loginType = "mobile";
 
-    }
+//     }
 
-    if (user) {
-      const result = await BuddysModel.findOneAndUpdate(
-        { _id: user._id },
-        { password: await hashPassword(password), },
-        { new: true }
-      );
+//     if (user) {
+//       const result = await BuddysModel.findOneAndUpdate(
+//         { _id: user._id },
+//         { password: await hashPassword(password), },
+//         { new: true }
+//       );
 
-      if (!result) return res.status(400).send({ message: "User not found in table." });
+//       if (!result) return res.status(400).send({ message: "User not found in table." });
 
-      res.status(200).send({ message: "The password has been updated succesfully.", result });
-    } else res.status(400).send({ message: "User Does Not Exist" });
-  } catch (error) {
-    console.log(error);
-    res.status(500).send({ message: "Internal Server Error", error });
-  }
-});
+//       res.status(200).send({ message: "The password has been updated succesfully.", result });
+//     } else res.status(400).send({ message: "User Does Not Exist" });
+//   } catch (error) {
+//     console.log(error);
+//     res.status(500).send({ message: "Internal Server Error", error });
+//   }
+// });
 
 
 //-------------------------------------------------------------------------------------------------
