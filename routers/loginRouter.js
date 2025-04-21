@@ -481,6 +481,7 @@ router.post("/courses", upload.single("image"), adminTokenValidation, async (req
         if (lessons) updateFields.lessons = lessons;
         if (languages) updateFields.languages = languages;
 
+        if (req.file) updateFields.image = image;
         if (coursePrice) updateFields.coursePrice = coursePrice;
         if (courseTime) updateFields.courseTime = courseTime;
         if (certificationOfCompletion) updateFields.certificationOfCompletion = certificationOfCompletion;
