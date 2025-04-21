@@ -1312,6 +1312,9 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
         const uniqueCourseIds = Array.from(courseIdSet);
         if (uniqueCourseIds.length === 0) return res.status(404).send({ message: "No valid course IDs found in libraries." });
 
+        // ✅ Get count BEFORE pagination
+        const totalCount = await coursesModel.countDocuments({ _id: { $in: uniqueCourseIds } });
+
         // Step 3: Fetch course details with pagination
         const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize).lean();
         if (!courseDetails || courseDetails.length === 0) return res.status(404).send({ message: "No course details found." });
@@ -1368,7 +1371,7 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
         });
 
         // Step 7: Send response
-        res.status(200).send({ message: "Courses and their libraries fetched successfully.", result: coursesWithLibraries });
+        res.status(200).send({ message: "Courses and their libraries fetched successfully.", totalCount, result: coursesWithLibraries });
       } else res.status(400).send({ message: "Action does not exist." });
     } else res.status(400).send({ message: "User does not exist." });
   } catch (error) {
