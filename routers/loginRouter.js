@@ -337,11 +337,11 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
         if (existingCategory) return res.status(400).send({ message: "category with this name already exists." });
 
         let isFeatures;
-        if (typeof isFeature === "string")  isFeatures = isFeature.toLowerCase() === "true";
-        
+        if (typeof isFeature === "string") isFeatures = isFeature.toLowerCase() === "true";
+
         let isFooters;
-        if (typeof isFeature === "string")  isFooters = isFooter.toLowerCase() === "true";
-    
+        if (typeof isFeature === "string") isFooters = isFooter.toLowerCase() === "true";
+
         const result = new categoryModel({
           userId: id,
           name,
@@ -546,7 +546,7 @@ router.post("/coursesList", adminTokenValidation, async (req, res) => {
         const existingCategory = await categoryModel.findOne({ _id: ID });
         if (!existingCategory) return res.status(400).send({ message: "No subject (category) found in table." });
 
-        const results = await coursesModel.find({ subjectId: ID, ...filter }).skip(skip).limit(pageSize);
+        const results = await coursesModel.find({ subjectId: ID, ...filter }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
         const result = await Promise.all(results.map(async (course) => {
 
@@ -677,15 +677,15 @@ router.post("/userslist", adminTokenValidation, async (req, res) => {
     const user = await BuddysModel.findOne({ _id: id });
     if (user) {
       if (action == "studentList") {
-        const result = await BuddysModel.find({ status: "Active", role: { $ne: "admin" }, ...filter }).lean().skip(skip).limit(pageSize);
+        const result = await BuddysModel.find({ status: "Active", role: { $ne: "admin" }, ...filter }).lean().sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
         res.status(200).json({ message: "student List", totalCount, result: result });
       } else if (action == "deletedList") {
-        const result = await BuddysModel.find({ status: "Inactive", role: { $ne: "admin" }, ...filter }).lean().skip(skip).limit(pageSize);
+        const result = await BuddysModel.find({ status: "Inactive", role: { $ne: "admin" }, ...filter }).lean().sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
         res.status(200).json({ message: "deleted List", totalCount, result: result });
       } else if (action == "pendingList") {
-        const result = await BuddysModel.find({ status: "Pending", role: { $ne: "admin" }, ...filter }).lean().skip(skip).limit(pageSize);
+        const result = await BuddysModel.find({ status: "Pending", role: { $ne: "admin" }, ...filter }).lean().sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
         res.status(200).json({ message: "pending List", totalCount, result: result });
       } else res.status(400).send({ message: "Action Does Not Exist." });
@@ -884,7 +884,7 @@ router.post("/adminVideoList", adminTokenValidation, async (req, res) => {
         if (uniqueCourseIds.length === 0) return res.status(404).send({ message: "No valid course IDs found in videos." });
 
         // Step 3: Fetch course details with pagination
-        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
+        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize).lean();
         if (!courseDetails || courseDetails.length === 0) return res.status(404).send({ message: "No course details found." });
 
         // Step 4: Group videos by courseId
@@ -1091,7 +1091,7 @@ router.post("/adminImageList", adminTokenValidation, async (req, res) => {
         if (uniqueCourseIds.length === 0) return res.status(404).send({ message: "No valid course IDs found in images." });
 
         // Step 3: Fetch course details with pagination
-        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
+        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize).lean();
         if (!courseDetails || courseDetails.length === 0) return res.status(404).send({ message: "No course details found." });
 
         // Step 4: Group images by courseId
@@ -1306,7 +1306,7 @@ router.post("/adminLibraryList", adminTokenValidation, async (req, res) => {
         if (uniqueCourseIds.length === 0) return res.status(404).send({ message: "No valid course IDs found in libraries." });
 
         // Step 3: Fetch course details with pagination
-        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).skip(skip).limit(pageSize).lean();
+        const courseDetails = await coursesModel.find({ _id: { $in: uniqueCourseIds } }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize).lean();
         if (!courseDetails || courseDetails.length === 0) return res.status(404).send({ message: "No course details found." });
 
         // Step 4: Group libraries by courseId
@@ -1390,7 +1390,7 @@ router.post("/subjectList", async (req, res) => {
         ? { name: { $regex: searchKeyword, $options: "i" } }
         : {}; // If no keyword, fetch all
 
-      const existingCategory = await categoryModel.find({ status: "Active", ...filter }).skip(skip).limit(pageSize);
+      const existingCategory = await categoryModel.find({ status: "Active", ...filter }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
       if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
       res.status(200).send({ message: "Subject's List.", result: existingCategory });
@@ -1421,7 +1421,7 @@ router.post("/listCourses", async (req, res) => {
       const existingCategory = await categoryModel.findOne({ _id: ID, status: "Active" });
       if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
-      const result = await coursesModel.find({ subjectId: ID, status: "Active", ...filter }).skip(skip).limit(pageSize);
+      const result = await coursesModel.find({ subjectId: ID, status: "Active", ...filter }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
       if (!result || result.length === 0) {
         return res.status(400).send({ message: "No course found for this subject." });
@@ -1433,8 +1433,10 @@ router.post("/listCourses", async (req, res) => {
         subjectDescription: existingCategory.description,
       }));
 
-      res.status(200).json({ message: "Course Details List.", coursesCount: enrichedResult.length, subjectName: existingCategory.name,
-        subjectDescription: existingCategory.description, result: enrichedResult });
+      res.status(200).json({
+        message: "Course Details List.", coursesCount: enrichedResult.length, subjectName: existingCategory.name,
+        subjectDescription: existingCategory.description, result: enrichedResult
+      });
     } else res.status(400).send({ message: "Action Does Not Exist." });
   } catch (error) {
     console.log(error);
@@ -1861,7 +1863,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
               const subjectName = category?.name || "";
 
               // Get image data
-              const imageDocs = await imageModel.find({ courseId: course._id }).skip(skip).limit(pageSize);
+              const imageDocs = await imageModel.find({ courseId: course._id }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
               const images = imageDocs.flatMap(doc => doc.image); // Combine all image arrays
 
               return {
@@ -1881,7 +1883,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
             status: "Active"
           };
 
-          const result = await coursesModel.find(courseFilter).skip(skip).limit(pageSize);
+          const result = await coursesModel.find(courseFilter).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
           if (!result || result.length === 0) {
             return res.status(400).send({ message: "No course found in the table." });
@@ -1907,7 +1909,7 @@ router.post("/profile", upload.single("image"), tokenValidation, async (req, res
 
           res.status(200).send({ message: "Courses Details.", result: enhancedCourses });
         } else if (type == "myList") {
-          const result = await enrollmentModel.find({ userId: existingUser._id, status: "Active" }).skip(skip).limit(pageSize);
+          const result = await enrollmentModel.find({ userId: existingUser._id, status: "Active" }).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
 
           if (!result || result.length === 0) {
             return res.status(400).send({ message: "No course found in the table." });
@@ -2327,14 +2329,14 @@ router.post("/studentList", userValidation, async (req, res) => {
       const studentList = [...new Set(student.map((enrollment) => enrollment.userId.toString()))];
       // console.log("studentList", studentList)
 
-      const studentListDetails = await BuddysModel.find({ _id: { $in:  studentList }, status: "Active" }).select("firstName lastName image profilePic");
+      const studentListDetails = await BuddysModel.find({ _id: { $in: studentList }, status: "Active" }).select("firstName lastName image profilePic");
       // console.log("studentListDetails", studentListDetails)
-      
-      const instructor = await BuddysModel.findOne({ _id: result.userId || id, status: "Active"  }).select("firstName lastName image profilePic")
+
+      const instructor = await BuddysModel.findOne({ _id: result.userId || id, status: "Active" }).select("firstName lastName image profilePic")
 
       const count = {
         totalStudentsEnrolled: await enrollmentModel.countDocuments({ courseId: ID, status: "Active", }),
-        totalcourseCreated: await coursesModel.countDocuments({ userId: instructor._id || id,  status: "Active", }),
+        totalcourseCreated: await coursesModel.countDocuments({ userId: instructor._id || id, status: "Active", }),
       };
 
       const resultWithData = {
