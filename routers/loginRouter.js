@@ -304,7 +304,7 @@ router.post("/Category", adminTokenValidation, async (req, res) => {
           ? { name: { $regex: searchKeyword, $options: "i" } }
           : {}; // If no keyword, fetch all
 
-        const existingCategory = await categoryModel.find(filter).skip(skip).limit(pageSize);
+        const existingCategory = await categoryModel.find(filter).sort({ updatedAt: -1 }).skip(skip).limit(pageSize);
         if (!existingCategory) return res.status(400).send({ message: "No category found in table." });
 
         res.status(200).send({ message: "Category detail.", result: existingCategory });
