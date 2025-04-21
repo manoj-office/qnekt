@@ -117,6 +117,7 @@ router.post("/login", async (req, res) => {
       user = await BuddysModel.findOne({
         emailId: email, status: "Active",
       })
+        .select("firstName lastName emailId mobNo role status") // same here
         .sort({ createdAt: -1 })
         .limit(1);
 
@@ -126,6 +127,7 @@ router.post("/login", async (req, res) => {
       user = await BuddysModel.findOne({
         mobNo: mobNo, status: "Active",
       })
+        .select("firstName lastName emailId mobNo role status") // same here
         .sort({ createdAt: -1 })
         .limit(1);
 
