@@ -2191,7 +2191,7 @@ router.post("/listResource", tokenValidation, async (req, res) => {
         const flattenedLibrary = [...new Set(library.flatMap(item => item.library))];
 
         res.status(200).send({ message: "course library List.", result: flattenedLibrary });
-      } else if (action == "iFrame") {
+      } else if (action == "iframe") {
 
 
         res.status(200).send({ message: "iFrame List.", result: { embedFormHTML:result?.embedFormHTML || ""} });
