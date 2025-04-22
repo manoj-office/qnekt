@@ -40,6 +40,7 @@ const coursesSchema = new mongoose.Schema(
         level: { type: String },
         lessons: { type: String},
         languages: { type: String},
+        embedFormHTML: { type: String},
 
         coursePrice: { type: String },
         courseTime: { type: String },
