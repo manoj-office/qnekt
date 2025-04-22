@@ -117,7 +117,6 @@ router.post("/login", async (req, res) => {
       user = await BuddysModel.findOne({
         emailId: email, status: "Active",
       })
-        .select("-_id") // same here
         .sort({ createdAt: -1 })
         .limit(1);
 
