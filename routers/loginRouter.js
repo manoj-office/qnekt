@@ -418,7 +418,7 @@ router.post("/subject", upload.single("icons"), adminTokenValidation, async (req
 router.post("/courses", upload.single("image"), adminTokenValidation, async (req, res) => {
   try {
     const id = req.userId;
-    const { action, subjectId, courseName, description, whatYouWillEarn, features, targetAudience, requirements, instructor, level, lessons, languages, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, ID } = req.body;
+    const { action, subjectId, courseName, description, whatYouWillEarn, features, targetAudience, requirements, instructor, level, lessons, languages, coursePrice, courseTime, certificationOfCompletion, moreInformation, courseType, ID, embedFormHTML } = req.body;
     req.body.userId = id;
 
     const image = req.file; // Change req.files to req.file
@@ -443,6 +443,7 @@ router.post("/courses", upload.single("image"), adminTokenValidation, async (req
           features,
           targetAudience,
           requirements,
+          embedFormHTML,
           instructor: id,
           level,
           lessons,
@@ -483,6 +484,7 @@ router.post("/courses", upload.single("image"), adminTokenValidation, async (req
         if (level) updateFields.level = level;
         if (lessons) updateFields.lessons = lessons;
         if (languages) updateFields.languages = languages;
+        if (embedFormHTML) updateFields.embedFormHTML = embedFormHTML;
 
         if (req.file) updateFields.image = image.path;
         if (coursePrice) updateFields.coursePrice = coursePrice;
