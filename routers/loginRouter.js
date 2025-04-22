@@ -2191,6 +2191,10 @@ router.post("/listResource", tokenValidation, async (req, res) => {
         const flattenedLibrary = [...new Set(library.flatMap(item => item.library))];
 
         res.status(200).send({ message: "course library List.", result: flattenedLibrary });
+      } else if (action == "iFrame") {
+
+
+        res.status(200).send({ message: "iFrame List.", result: { embedFormHTML:result?.embedFormHTML || ""} });
       } else res.status(400).send({ message: "Action Does Not Exist." });
     } else res.status(400).send({ message: "User Does Not Exist." });
   } catch (error) {
